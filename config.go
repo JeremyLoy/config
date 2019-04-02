@@ -42,8 +42,9 @@ func From(file string) Builder {
 func (c *configBuilder) From(f string) Builder {
 	file, err := os.Open(f)
 	if err != nil {
-		panic("oops!")
+		panic(fmt.Sprintf("oops!: %v", err))
 	}
+	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	var ss []string
 	for scanner.Scan() {

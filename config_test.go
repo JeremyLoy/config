@@ -1,9 +1,56 @@
 package config
 
 import (
+	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 )
+
+func Test_Integration(t *testing.T) {
+	t.Parallel()
+	type D struct {
+		E bool
+	}
+	type testConfig struct {
+		A int
+		B string
+		C []int
+		D D
+	}
+
+	file, err := ioutil.TempFile("", "testenv")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %v", err)
+	}
+	defer os.Remove(file.Name())
+
+	testData := "A=1\nB=abc\nC=4 5 6\nD__E=true"
+	_, err = file.Write([]byte(testData))
+	if err != nil {
+		t.Fatalf("failed to write test data to temp file: %v", err)
+	}
+	err = os.Setenv("B", "overridden")
+	if err != nil {
+		t.Fatalf("failed to override environ: %v", err)
+	}
+
+	var got testConfig
+	want := testConfig{
+		A: 1,
+		B: "overridden",
+		C: []int{4, 5, 6},
+		D: D{
+			E: true,
+		},
+	}
+
+	From(file.Name()).FromEnv().To(&got)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Integration: got %+v, want %+v", got, want)
+	}
+
+}
 
 func Test_stringToSlice(t *testing.T) {
 	type args struct {
@@ -163,7 +210,9 @@ func Test_convertAndSetValue(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			convertAndSetValue(tt.args.settable, tt.args.s)
 			if !reflect.DeepEqual(tt.args.settable, tt.want) {
 				t.Errorf("convertAndSetValue = %v, want %v", tt.args.settable, tt.want)
@@ -173,6 +222,7 @@ func Test_convertAndSetValue(t *testing.T) {
 }
 
 func Test_convertAndSetSlice(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		slicePtr interface{}
 		values   []string
@@ -200,13 +250,16 @@ func Test_convertAndSetSlice(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			convertAndSetSlice(tt.args.slicePtr, tt.args.values)
 		})
 	}
 }
 
 func Test_stringsToMap(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		ss []string
 	}
@@ -226,7 +279,9 @@ func Test_stringsToMap(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := stringsToMap(tt.args.ss); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("stringsToMap() = %v, want %v", got, tt.want)
 			}
