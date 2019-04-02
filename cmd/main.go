@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/JeremyLoy/config"
 )
@@ -32,21 +33,20 @@ type MyConfig struct {
 		P int
 		Q QConfig
 	}
-	R *int
-	T *struct {
-		U int
-		V *int
-	}
-	// TODO slice
+	T []string
+	U []int
+	V []int
 }
 
 func main() {
 	var c MyConfig
 
+	start := time.Now()
 	config.From("defaults").FromEnv().To(&c)
+	elapsed := time.Since(start)
 
 	fmt.Printf("%+v\n", c)
-	fmt.Println(*c.T)
-	fmt.Println(*c.T.V)
+	fmt.Println(c.V == nil)
+	fmt.Println(elapsed)
 
 }
