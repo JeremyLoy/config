@@ -45,13 +45,13 @@ func From(file string) *Builder {
 
 // From merges new values from file into the current config state.
 // It panics if unable to open the file.
-func (c *Builder) From(f string) *Builder {
-	file, err := os.Open(f)
+func (c *Builder) From(file string) *Builder {
+	f, err := os.Open(file)
 	if err != nil {
 		panic(fmt.Sprintf("oops!: %v", err))
 	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
 	var ss []string
 	for scanner.Scan() {
 		ss = append(ss, scanner.Text())
