@@ -1,8 +1,6 @@
 # Config
-
 [![Documentation](https://godoc.org/github.com/JeremyLoy/config?status.svg)](http://godoc.org/github.com/JeremyLoy/config)
 
-#
 Manage your application config as a typesafe struct in as little as two function calls.
 
 ```go
