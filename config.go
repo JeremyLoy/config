@@ -1,3 +1,4 @@
+// Package config provides typesafe, cloud native configuration binding from environment variables or files to structs.
 package config
 
 import (
@@ -35,10 +36,14 @@ func (c *configBuilder) mergeConfig(in map[string]string) {
 	}
 }
 
+// From returns a new Builder, populated with the values from file.
+// It panics if unable to open the file.
 func From(file string) Builder {
 	return newConfigBuilder().From(file)
 }
 
+// From merges the current config state with new values from file.
+// It panics if unable to open the file.
 func (c *configBuilder) From(f string) Builder {
 	file, err := os.Open(f)
 	if err != nil {
@@ -54,10 +59,14 @@ func (c *configBuilder) From(f string) Builder {
 	return c
 }
 
+// FromEnv returns a new Builder, populated with environment variables
 func FromEnv() Builder {
 	return newConfigBuilder().FromEnv()
 }
 
+// stringsToMap builds a map from a string slice.
+// The input strings are assumed to be environment variable in style e.g. KEY=VALUE
+// Keys with no value are not added to the map.
 func stringsToMap(ss []string) map[string]string {
 	m := make(map[string]string)
 	for _, s := range ss {
@@ -65,7 +74,7 @@ func stringsToMap(ss []string) map[string]string {
 			continue // ensures return is always of length 2
 		}
 		split := strings.SplitN(s, "=", 2)
-		key, value := split[0], split[1]
+		key, value := strings.ToLower(split[0]), split[1]
 		if key != "" && value != "" {
 			m[key] = value
 		}
@@ -73,11 +82,20 @@ func stringsToMap(ss []string) map[string]string {
 	return m
 }
 
+// FromEnv merges the current config state with new values from the environment.
 func (c *configBuilder) FromEnv() Builder {
 	c.mergeConfig(stringsToMap(os.Environ()))
 	return c
 }
 
+// To accepts a struct pointer, and populates it with the current config state.
+// Supported fields:
+//     * all int, uint, float variants
+//     * bool, struct, string
+//     * slice of any of the above, except for []struct{}
+// It panics under the following circumstances:
+//     * target is not a struct pointer
+//     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
 func (c *configBuilder) To(target interface{}) {
 	c.populateStructRecursively(target, "")
 }
@@ -92,7 +110,7 @@ func (c *configBuilder) populateStructRecursively(structPtr interface{}, prefix 
 		fieldType := structValue.Type().Field(i)
 		fieldPtr := structValue.Field(i).Addr().Interface()
 
-		key := prefix + fieldType.Name
+		key := strings.ToLower(prefix + fieldType.Name)
 		value := c.configMap[key]
 
 		switch fieldType.Type.Kind() {

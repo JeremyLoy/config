@@ -274,7 +274,7 @@ func Test_stringsToMap(t *testing.T) {
 				ss: []string{"", "     ", "=", "A=", "B=1"},
 			},
 			want: map[string]string{
-				"B": "1",
+				"b": "1",
 			},
 		},
 	}
