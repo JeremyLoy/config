@@ -1,4 +1,8 @@
 // Package config provides typesafe, cloud native configuration binding from environment variables or files to structs.
+//
+// Configuration can be done in as little as two lines:
+//     var c MyConfig
+//     config.FromEnv().To(&c)
 package config
 
 import (
