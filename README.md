@@ -6,6 +6,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/JeremyLoy/config.svg)](https://github.com/JeremyLoy/config/issues)
 [![license](https://img.shields.io/github/license/JeremyLoy/config.svg?maxAge=2592000)](https://github.com/JeremyLoy/config/LICENSE)
 [![Release](https://img.shields.io/github/release/JeremyLoy/config.svg?label=Release)](https://github.com/JeremyLoy/config/releases)
+
 Manage your application config as a typesafe struct in as little as two function calls.
 
 ```go
