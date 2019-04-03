@@ -31,10 +31,10 @@ func Example() {
 	var c MyConfig
 	config.FromEnv().To(&c)
 
-	fmt.Println(c.DatabaseURL)
-	fmt.Println(c.Port)
-	fmt.Println(c.FeatureFlag)
-	fmt.Println(c.SubConfig.IPWhitelist)
+	fmt.Println(c.DatabaseURL)           // db://
+	fmt.Println(c.Port)                  // 1234
+	fmt.Println(c.FeatureFlag)           // true
+	fmt.Println(c.SubConfig.IPWhitelist) // [0.0.0.0,1.1.1.1,2.2.2.2]
 
 	// Output:
 	// db://
