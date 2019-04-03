@@ -12,39 +12,40 @@ import (
 
 const delim = "__"
 
-type Builder interface {
-	FromEnv() Builder
-	From(file string) Builder
-	To(target interface{})
-}
-
-type configBuilder struct {
+// Builder contains the current configuration state.
+type Builder struct {
 	delim     string
 	configMap map[string]string
 }
 
-func newConfigBuilder() Builder {
-	return &configBuilder{
+func newConfigBuilder() *Builder {
+	return &Builder{
 		configMap: make(map[string]string),
 		delim:     delim,
 	}
 }
 
-func (c *configBuilder) mergeConfig(in map[string]string) {
-	for k, v := range in {
-		c.configMap[k] = v
-	}
+// To accepts a struct pointer, and populates it with the current config state.
+// Supported fields:
+//     * all int, uint, float variants
+//     * bool, struct, string
+//     * slice of any of the above, except for []struct{}
+// It panics under the following circumstances:
+//     * target is not a struct pointer
+//     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
+func (c *Builder) To(target interface{}) {
+	c.populateStructRecursively(target, "")
 }
 
 // From returns a new Builder, populated with the values from file.
 // It panics if unable to open the file.
-func From(file string) Builder {
+func From(file string) *Builder {
 	return newConfigBuilder().From(file)
 }
 
-// From merges the current config state with new values from file.
+// From merges new values from file into the current config state.
 // It panics if unable to open the file.
-func (c *configBuilder) From(f string) Builder {
+func (c *Builder) From(f string) *Builder {
 	file, err := os.Open(f)
 	if err != nil {
 		panic(fmt.Sprintf("oops!: %v", err))
@@ -60,8 +61,20 @@ func (c *configBuilder) From(f string) Builder {
 }
 
 // FromEnv returns a new Builder, populated with environment variables
-func FromEnv() Builder {
+func FromEnv() *Builder {
 	return newConfigBuilder().FromEnv()
+}
+
+// FromEnv merges new values from the environment into the current config state..
+func (c *Builder) FromEnv() *Builder {
+	c.mergeConfig(stringsToMap(os.Environ()))
+	return c
+}
+
+func (c *Builder) mergeConfig(in map[string]string) {
+	for k, v := range in {
+		c.configMap[k] = v
+	}
 }
 
 // stringsToMap builds a map from a string slice.
@@ -82,29 +95,11 @@ func stringsToMap(ss []string) map[string]string {
 	return m
 }
 
-// FromEnv merges the current config state with new values from the environment.
-func (c *configBuilder) FromEnv() Builder {
-	c.mergeConfig(stringsToMap(os.Environ()))
-	return c
-}
-
-// To accepts a struct pointer, and populates it with the current config state.
-// Supported fields:
-//     * all int, uint, float variants
-//     * bool, struct, string
-//     * slice of any of the above, except for []struct{}
-// It panics under the following circumstances:
-//     * target is not a struct pointer
-//     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
-func (c *configBuilder) To(target interface{}) {
-	c.populateStructRecursively(target, "")
-}
-
 // populateStructRecursively populates each field of the passed in struct.
 // slices and values are set directly.
 // nested structs recurse through this function.
 // values are derived from the field name, prefixed with the field names of any parents.
-func (c *configBuilder) populateStructRecursively(structPtr interface{}, prefix string) {
+func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string) {
 	structValue := reflect.ValueOf(structPtr).Elem()
 	for i := 0; i < structValue.NumField(); i++ {
 		fieldType := structValue.Type().Field(i)
