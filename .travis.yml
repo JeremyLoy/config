@@ -2,3 +2,9 @@ language: go
 
 go:
   - 1.x
+
+before_install:
+  - go get github.com/mattn/goveralls
+script:
+  - go vet
+  - $HOME/gopath/bin/goveralls -service=travis-ci
