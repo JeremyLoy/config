@@ -1,6 +1,11 @@
 # Config
 [![Documentation](https://godoc.org/github.com/JeremyLoy/config?status.svg)](http://godoc.org/github.com/JeremyLoy/config)
-
+[![Build Status](https://travis-ci.org/JeremyLoy/config.svg?branch=master)](https://travis-ci.org/JeremyLoy/config)
+[![Go Report Card](https://goreportcard.com/badge/github.com/JeremyLoy/config)](https://goreportcard.com/report/github.com/JeremyLoy/config)
+[![Coverage Status](https://coveralls.io/repos/github/JeremyLoy/config/badge.svg?branch=master)](https://coveralls.io/github/JeremyLoy/config?branch=master)
+[![GitHub issues](https://img.shields.io/github/issues/JeremyLoy/config.svg)](https://github.com/JeremyLoy/config/issues)
+[![license](https://img.shields.io/github/license/JeremyLoy/config.svg?maxAge=2592000)](https://github.com/JeremyLoy/config/LICENSE)
+[![Release](https://img.shields.io/github/release/JeremyLoy/config.svg?label=Release)](https://github.com/JeremyLoy/config/releases)
 Manage your application config as a typesafe struct in as little as two function calls.
 
 ```go
