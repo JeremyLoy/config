@@ -13,7 +13,6 @@
 //  Nested structs/subconfigs are delimited with double underscore
 //    e.g. `PARENT__CHILD`
 //  Env vars map to struct fields case insensitively
-
 package config
 
 import (
