@@ -11,7 +11,7 @@
 // If chaining multiple data sources, data sets are merged.
 //
 // Later values override previous values.
-//   From("dev.config").FromEnv().To(&c)
+//   config.From("dev.config").FromEnv().To(&c)
 //
 // Unset values remain as their native zero value: https://tour.golang.org/basics/12.
 //

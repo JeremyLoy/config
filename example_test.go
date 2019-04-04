@@ -7,26 +7,13 @@ import (
 	"github.com/JeremyLoy/config"
 )
 
-type MySubConfig struct {
-	IPWhitelist []string
-}
+func Example() {
 
-type MyConfig struct {
-	DatabaseURL string
-	Port        int
-	FeatureFlag bool
-	SubConfig   MySubConfig
-	// etc.
-}
-
-func init() {
 	os.Setenv("DATABASEURL", "db://")
 	os.Setenv("PORT", "1234")
-	os.Setenv("FEATUREFLAG", "true")
-	os.Setenv("SUBCONFIG__IPWHITELIST", "0.0.0.0 1.1.1.1 2.2.2.2") // space delimited
-}
-
-func Example() {
+	os.Setenv("FEATUREFLAG", "true") // also accepts t, f, 0, 1 etc. see strconv package.
+	// Double underscore for sub structs. Space separation for slices.
+	os.Setenv("SUBCONFIG__IPWHITELIST", "0.0.0.0 1.1.1.1 2.2.2.2")
 
 	var c MyConfig
 	config.FromEnv().To(&c)

@@ -30,7 +30,7 @@ Its just simple, pure stdlib.
 * All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
-    * e.g. `From("dev.config").FromEnv().To(&c)`
+    * e.g. `config.From("dev.config").FromEnv().To(&c)`
 * Unset values remain as their native [zero value](https://tour.golang.org/basics/12) 
 * Nested structs/subconfigs are delimited with double underscore 
     * e.g. `PARENT__CHILD`
