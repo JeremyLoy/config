@@ -289,11 +289,15 @@ func Test_stringsToMap(t *testing.T) {
 	}
 }
 
-func Test_filesystemErrors(t *testing.T) {
+func Test_objectErrors(t *testing.T) {
 	t.Parallel()
 
 	var c struct{}
-	if err := From("a non existantFile").To(&c).Err(); err == nil {
+	if err := From("a non existent file").To(&c).Err(); err == nil {
+		t.Error("expected an error but got none.")
+	}
+
+	if err := From("a non existent file").From("another none existent file").FromEnv().To(&c).Err(); err == nil {
 		t.Error("expected an error but got none.")
 	}
 }
@@ -363,6 +367,15 @@ func Test_conversionErrors(t *testing.T) {
 			t.Parallel()
 			if err := convertAndSetValue(tt.settable, "!"); err == nil {
 				t.Errorf("expected an error from convertAndSetValue")
+			}
+			os.Setenv("test", "invalid")
+			c := struct {
+				Test interface{}
+			}{
+				Test: tt.settable,
+			}
+			if err := FromEnv().To(&c).Err(); err == nil {
+				t.Error("expected an error from invalid input")
 			}
 		})
 	}
