@@ -9,7 +9,7 @@ import (
 	"github.com/JeremyLoy/config"
 )
 
-func ExampleWithFile() {
+func Example_fromFileWithOverride() {
 	tempFile, _ := ioutil.TempFile("", "temp")
 	tempFile.Write([]byte(strings.Join([]string{"PORT=1234", "FEATUREFLAG=true"}, "\n")))
 	tempFile.Close()
