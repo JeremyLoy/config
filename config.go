@@ -173,7 +173,7 @@ func convertAndSetValue(settable interface{}, s string) {
 		val, _ := strconv.ParseInt(s, 10, 8)
 		settableValue.SetInt(val)
 	case reflect.Int16:
-		val, _ := strconv.ParseInt(s, 10, 26)
+		val, _ := strconv.ParseInt(s, 10, 16)
 		settableValue.SetInt(val)
 	case reflect.Int32:
 		val, _ := strconv.ParseInt(s, 10, 32)
