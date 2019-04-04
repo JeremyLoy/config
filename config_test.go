@@ -288,3 +288,82 @@ func Test_stringsToMap(t *testing.T) {
 		})
 	}
 }
+
+func Test_filesystemErrors(t *testing.T) {
+	t.Parallel()
+
+	var c struct{}
+	if err := From("a non existantFile").To(&c).Err(); err == nil {
+		t.Error("expected an error but got none.")
+	}
+}
+
+func Test_conversionErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		settable interface{}
+	}{
+		{
+			name:     "int",
+			settable: new(int),
+		},
+		{
+			name:     "int8",
+			settable: new(int8),
+		},
+		{
+			name:     "int16",
+			settable: new(int16),
+		},
+		{
+			name:     "int32",
+			settable: new(int32),
+		},
+		{
+			name:     "int64",
+			settable: new(int64),
+		},
+		{
+			name:     "uint",
+			settable: new(uint),
+		},
+		{
+			name:     "uint8",
+			settable: new(uint8),
+		},
+		{
+			name:     "uint16",
+			settable: new(uint16),
+		},
+		{
+			name:     "uint32",
+			settable: new(uint32),
+		},
+		{
+			name:     "uint64",
+			settable: new(uint64),
+		},
+		{
+			name:     "float64",
+			settable: new(float64),
+		},
+		{
+			name:     "float32",
+			settable: new(float32),
+		},
+		{
+			name:     "bool",
+			settable: new(bool),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if err := convertAndSetValue(tt.settable, "!"); err == nil {
+				t.Errorf("expected an error from convertAndSetValue")
+			}
+		})
+	}
+}
