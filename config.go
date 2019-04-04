@@ -3,6 +3,17 @@
 // Configuration can be done in as little as two lines:
 //     var c MyConfig
 //     config.FromEnv().To(&c)
+//
+//  A field's type determines what [strconv](https://golang.org/pkg/strconv/) function is called.
+//  All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
+//  If chaining multiple data sources, data sets are merged.
+//  Later values override previous values.
+//    e.g. `From("dev.config").FromEnv().To(&c)`
+//  Unset values remain as their native [zero value](https://tour.golang.org/basics/12)
+//  Nested structs/subconfigs are delimited with double underscore
+//    e.g. `PARENT__CHILD`
+//  Env vars map to struct fields case insensitively
+
 package config
 
 import (

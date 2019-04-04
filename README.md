@@ -26,12 +26,15 @@ config.FromEnv().To(&c)
 
 Its just simple, pure stdlib. 
 
-* The type of a field determines what [strconv](https://golang.org/pkg/strconv/) function is called.
+* A field's type determines what [strconv](https://golang.org/pkg/strconv/) function is called.
 * All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
     * e.g. `From("dev.config").FromEnv().To(&c)`
 * Unset values remain as their native [zero value](https://tour.golang.org/basics/12) 
+* Nested structs/subconfigs are delimited with double underscore 
+    * e.g. `PARENT__CHILD`
+* Env vars map to struct fields case insensitively
 
 ## Why you should use this
 
@@ -56,6 +59,5 @@ Feel free to use it on its own, or alongside other libraries.
 * No slices of structs. The extra complexity isn't warranted for such a niche usecase.
 
 * No maps. The only feature of maps not handled by structs for this usecase is dynamic keys.
-    * TODO
 
 * No pointer members. If you really need one, just take the address of parts of your struct.
