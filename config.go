@@ -23,6 +23,7 @@ package config
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"reflect"
@@ -77,6 +78,23 @@ func (c *Builder) From(file string) *Builder {
 		ss = append(ss, scanner.Text())
 	}
 	c.mergeConfig(stringsToMap(ss))
+	return c
+}
+
+// FromFlags returns a new Builder, populated with the values from set flags.
+// Flags must be parsed before calling this function.
+func FromFlags() *Builder {
+	return newBuilder().FromFlags()
+}
+
+// FromFlags merges new values from set flag into the current config state, returning the Builder.
+// Flags must be parsed before calling this function.
+func (c *Builder) FromFlags() *Builder {
+	m := make(map[string]string)
+	flag.Visit(func(f *flag.Flag) {
+		m[strings.ToLower(f.Name)] = f.Value.String()
+	})
+	c.mergeConfig(m)
 	return c
 }
 

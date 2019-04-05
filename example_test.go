@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -65,4 +66,28 @@ func Example_fromFileWithOverride() {
 	// db://
 	// 5678
 	// true
+}
+
+func Example_flags() {
+	flag.String("databaseUrl", "", "")
+	flag.Int("port", 0, "")
+	// for slices, set the flag's type to the slices type
+	flag.String("subconfig__ipwhitelist", "", "")
+
+	flag.Set("databaseUrl", "db://")
+	flag.Set("port", "5678")
+	flag.Set("subconfig__ipwhitelist", "0.0.0.0 1.1.1.1 2.2.2.2")
+	flag.Parse()
+
+	var c MyConfig
+	config.FromFlags().To(&c)
+
+	fmt.Println(c.DatabaseURL)
+	fmt.Println(c.Port)
+	fmt.Println(c.SubConfig.IPWhitelist, len(c.SubConfig.IPWhitelist))
+
+	// Output:
+	// db://
+	// 5678
+	// [0.0.0.0 1.1.1.1 2.2.2.2] 3
 }
