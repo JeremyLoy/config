@@ -38,7 +38,7 @@ type Builder struct {
 	configMap map[string]string
 }
 
-func newConfigBuilder() *Builder {
+func newBuilder() *Builder {
 	return &Builder{
 		configMap: make(map[string]string),
 		delim:     delim,
@@ -60,10 +60,10 @@ func (c *Builder) To(target interface{}) {
 // From returns a new Builder, populated with the values from file.
 // It panics if unable to open the file.
 func From(file string) *Builder {
-	return newConfigBuilder().From(file)
+	return newBuilder().From(file)
 }
 
-// From merges new values from file into the current config state.
+// From merges new values from file into the current config state, returning the Builder.
 // It panics if unable to open the file.
 func (c *Builder) From(file string) *Builder {
 	f, err := os.Open(file)
@@ -82,10 +82,10 @@ func (c *Builder) From(file string) *Builder {
 
 // FromEnv returns a new Builder, populated with environment variables
 func FromEnv() *Builder {
-	return newConfigBuilder().FromEnv()
+	return newBuilder().FromEnv()
 }
 
-// FromEnv merges new values from the environment into the current config state..
+// FromEnv merges new values from the environment into the current config state, returning the Builder.
 func (c *Builder) FromEnv() *Builder {
 	c.mergeConfig(stringsToMap(os.Environ()))
 	return c
