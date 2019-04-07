@@ -13,8 +13,8 @@ Manage your application config as a typesafe struct in as little as two function
 ```go
 type MyConfig struct {
 	DatabaseUrl string `config:"DATABASE_URL"`
-	FeatureFlag bool `config:"FEATURE_FLAG"`
-	Port int // tags are optional. PORT is assumed
+	FeatureFlag bool   `config:"FEATURE_FLAG"`
+	Port        int // tags are optional. PORT is assumed
 	...
 }
 

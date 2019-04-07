@@ -16,8 +16,8 @@ func Test_Integration(t *testing.T) {
 		F bool `config:"feRdiNaND"` // case insensitive
 	}
 	type testConfig struct {
-		A int `config:"     "` // no-op/ignored
-		B string `config:"B"` // no effect
+		A int    `config:"     "` // no-op/ignored
+		B string `config:"B"`     // no effect
 		C []int
 		D D `config:"dOg"` // case insensitive for sub-configs
 	}

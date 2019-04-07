@@ -33,21 +33,21 @@ import (
 
 const (
 	structTagKey = "config"
-	structDelim = "__"
-	sliceDelim = " "
+	structDelim  = "__"
+	sliceDelim   = " "
 )
 
 // Builder contains the current configuration state.
 type Builder struct {
 	structDelim, sliceDelim string
-	configMap   map[string]string
+	configMap               map[string]string
 }
 
 func newBuilder() *Builder {
 	return &Builder{
 		configMap:   make(map[string]string),
 		structDelim: structDelim,
-		sliceDelim: sliceDelim,
+		sliceDelim:  sliceDelim,
 	}
 }
 
