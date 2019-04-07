@@ -7,4 +7,5 @@ before_install:
   - go get github.com/mattn/goveralls
 script:
   - go vet
+  - test -z "$(goimports -l .)"
   - $HOME/gopath/bin/goveralls -service=travis-ci
