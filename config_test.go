@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -11,12 +12,13 @@ func Test_Integration(t *testing.T) {
 	t.Parallel()
 	type D struct {
 		E bool
+		F bool `config:"feRdiNaND"` // case insensitive
 	}
 	type testConfig struct {
-		A int
-		B string
+		A int `config:"     "` // no-op/ignored
+		B string `config:"B"` // no effect
 		C []int
-		D D
+		D D `config:"dOg"` // case insensitive for sub-configs
 	}
 
 	file, err := ioutil.TempFile("", "testenv")
@@ -25,7 +27,13 @@ func Test_Integration(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
-	testData := "A=1\nB=abc\nC=4 5 6\nD__E=true"
+	testData := strings.Join([]string{
+		"A=1",
+		"B=abc",
+		"C=4 5 6",
+		"DoG__E=true",
+		"DoG__FErDINANd=true",
+	}, "\n")
 	_, err = file.Write([]byte(testData))
 	if err != nil {
 		t.Fatalf("failed to write test data to temp file: %v", err)
@@ -42,6 +50,7 @@ func Test_Integration(t *testing.T) {
 		C: []int{4, 5, 6},
 		D: D{
 			E: true,
+			F: true,
 		},
 	}
 
@@ -293,6 +302,84 @@ func Test_stringsToMap(t *testing.T) {
 			t.Parallel()
 			if got := stringsToMap(tt.args.ss); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("stringsToMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getKey(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		t      reflect.StructField
+		prefix string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "no tag",
+			args: args{
+				t: reflect.StructField{
+					Name: "name",
+					Tag:  "",
+				},
+				prefix: "pre__",
+			},
+			want: "pre__name",
+		},
+		{
+			name: "no tag - mixed case",
+			args: args{
+				t: reflect.StructField{
+					Name: "nAMe",
+					Tag:  "",
+				},
+				prefix: "pRe__",
+			},
+			want: "pre__name",
+		},
+		{
+			name: "empty tag",
+			args: args{
+				t: reflect.StructField{
+					Name: "name",
+					Tag:  "config:\"\"",
+				},
+				prefix: "pre__",
+			},
+			want: "pre__name",
+		},
+		{
+			name: "whitespace tag",
+			args: args{
+				t: reflect.StructField{
+					Name: "name",
+					Tag:  "config:\"    \"",
+				},
+				prefix: "pre__",
+			},
+			want: "pre__name",
+		},
+		{
+			name: "tag",
+			args: args{
+				t: reflect.StructField{
+					Name: "name",
+					Tag:  "config:\"  tag  \"",
+				},
+				prefix: "pre__",
+			},
+			want: "pre__tag",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := getKey(tt.args.t, tt.args.prefix); got != tt.want {
+				t.Errorf("getKey() = %v, want %v", got, tt.want)
 			}
 		})
 	}

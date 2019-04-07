@@ -14,17 +14,17 @@ type MySubConfig struct {
 }
 
 type MyConfig struct {
-	DatabaseURL string
+	DatabaseURL string `config:"DATABASE_URL"`
 	Port        int
-	FeatureFlag bool
+	FeatureFlag bool `config:"FEATURE_FLAG"`
 	SubConfig   MySubConfig
 }
 
 func Example() {
 
-	os.Setenv("DATABASEURL", "db://")
+	os.Setenv("DATABASE_URL", "db://")
 	os.Setenv("PORT", "1234")
-	os.Setenv("FEATUREFLAG", "true") // also accepts t, f, 0, 1 etc. see strconv package.
+	os.Setenv("FEATURE_FLAG", "true") // also accepts t, f, 0, 1 etc. see strconv package.
 	// Double underscore for sub structs. Space separation for slices.
 	os.Setenv("SUBCONFIG__IPWHITELIST", "0.0.0.0 1.1.1.1 2.2.2.2")
 
@@ -65,4 +65,23 @@ func Example_fromFileWithOverride() {
 	// db://
 	// 5678
 	// true
+}
+
+func Example_structTags() {
+	type MyConfig struct {
+		// NOTE: even when using tags, lookup is still case insensitive.
+		// dAtABase_urL would still work.
+		DatabaseURL string `config:"DATABASE_URL"`
+	}
+
+	os.Setenv("DATABASE_URL", "db://")
+
+	var c MyConfig
+	config.FromEnv().To(&c)
+
+	// db:// was only set in ENV
+	fmt.Println(c.DatabaseURL)
+
+	// Output:
+	// db://
 }

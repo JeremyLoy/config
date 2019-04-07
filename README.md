@@ -12,9 +12,9 @@ Manage your application config as a typesafe struct in as little as two function
 
 ```go
 type MyConfig struct {
-	DatabaseUrl string
-	Port int
-	FeatureFlag bool
+	DatabaseUrl string `config:"DATABASE_URL"`
+	FeatureFlag bool `config:"FEATURE_FLAG"`
+	Port int // tags are optional. PORT is assumed
 	...
 }
 
@@ -30,11 +30,15 @@ Its just simple, pure stdlib.
 * All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
-    * e.g. `config.From("dev.config").FromEnv().To(&c)`
+  ```go
+  config.From("dev.config").FromEnv().To(&c)
+  ```
+    
 * Unset values remain as their native [zero value](https://tour.golang.org/basics/12) 
 * Nested structs/subconfigs are delimited with double underscore 
     * e.g. `PARENT__CHILD`
 * Env vars map to struct fields case insensitively
+    * NOTE: Also true when using struct tags.
 
 ## Why you should use this
 
@@ -45,9 +49,9 @@ Its just simple, pure stdlib.
     * Merge local files and environment variables for effortless local development.
 * small:
     * only stdlib 
-    * < 160 LoC
+    * < 180 LoC
     
-## Design Philosophy.
+## Design Philosophy
 
 Opinionated and narrow in scope. This library is only meant to do config binding. 
 Feel free to use it on its own, or alongside other libraries.  

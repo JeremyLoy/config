@@ -19,6 +19,7 @@
 //   PARENT__CHILD
 //
 // Env vars map to struct fields case insensitively.
+//   NOTE: Also true when using struct tags.
 package config
 
 import (
@@ -31,6 +32,7 @@ import (
 )
 
 const (
+	structTagKey = "config"
 	structDelim = "__"
 	sliceDelim = " "
 )
@@ -129,7 +131,7 @@ func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string
 		fieldType := structValue.Type().Field(i)
 		fieldPtr := structValue.Field(i).Addr().Interface()
 
-		key := strings.ToLower(prefix + fieldType.Name)
+		key := getKey(fieldType, prefix)
 		value := c.configMap[key]
 
 		switch fieldType.Type.Kind() {
@@ -143,7 +145,20 @@ func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string
 	}
 }
 
-// stringToSlice converts a string to a slice of string, using the Builder's sliceDelim.
+// getKey returns the string that represents this structField in the config map.
+// If the structField has the appropriate structTag set, it is used.
+// Otherwise, field's name is used.
+func getKey(t reflect.StructField, prefix string) string {
+	name := t.Name
+	if tag, exists := t.Tag.Lookup(structTagKey); exists {
+		if tag = strings.TrimSpace(tag); tag != "" {
+			name = tag
+		}
+	}
+	return strings.ToLower(prefix + name)
+}
+
+// stringToSlice converts a string to a slice of string, using delim.
 // It strips surrounding whitespace of all entries.
 // If the input string is empty or all whitespace, nil is returned.
 func stringToSlice(s, delim string) []string {
