@@ -9,7 +9,8 @@ import (
 )
 
 func Test_Integration(t *testing.T) {
-	t.Parallel()
+	// cannot be Parallelized as it manipulates env vars.
+	// It must clear env afterwards to avoid bleeding env changes.
 	type D struct {
 		E bool
 		F bool `config:"feRdiNaND"` // case insensitive
@@ -58,7 +59,7 @@ func Test_Integration(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Integration: got %+v, want %+v", got, want)
 	}
-
+	os.Clearenv()
 }
 
 func Test_stringToSlice(t *testing.T) {

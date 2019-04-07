@@ -1,3 +1,4 @@
+// NOTE: os.Clearenv must be called before each test that uses env vars to avoid false positives with env bleeding over.
 package config_test
 
 import (
@@ -21,7 +22,7 @@ type MyConfig struct {
 }
 
 func Example() {
-
+	os.Clearenv()
 	os.Setenv("DATABASE_URL", "db://")
 	os.Setenv("PORT", "1234")
 	os.Setenv("FEATURE_FLAG", "true") // also accepts t, f, 0, 1 etc. see strconv package.
@@ -48,6 +49,7 @@ func Example_fromFileWithOverride() {
 	tempFile.Write([]byte(strings.Join([]string{"PORT=1234", "FEATURE_FLAG=true"}, "\n")))
 	tempFile.Close()
 
+	os.Clearenv()
 	os.Setenv("DATABASE_URL", "db://")
 	os.Setenv("PORT", "5678")
 
@@ -74,6 +76,7 @@ func Example_structTags() {
 		DatabaseURL string `config:"DATABASE_URL"`
 	}
 
+	os.Clearenv()
 	os.Setenv("DATABASE_URL", "db://")
 
 	var c MyConfig
