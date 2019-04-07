@@ -30,18 +30,22 @@ import (
 	"strings"
 )
 
-const delim = "__"
+const (
+	structDelim = "__"
+	sliceDelim = " "
+)
 
 // Builder contains the current configuration state.
 type Builder struct {
-	delim     string
-	configMap map[string]string
+	structDelim, sliceDelim string
+	configMap   map[string]string
 }
 
 func newBuilder() *Builder {
 	return &Builder{
-		configMap: make(map[string]string),
-		delim:     delim,
+		configMap:   make(map[string]string),
+		structDelim: structDelim,
+		sliceDelim: sliceDelim,
 	}
 }
 
@@ -130,26 +134,30 @@ func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string
 
 		switch fieldType.Type.Kind() {
 		case reflect.Struct:
-			c.populateStructRecursively(fieldPtr, key+c.delim)
+			c.populateStructRecursively(fieldPtr, key+c.structDelim)
 		case reflect.Slice:
-			convertAndSetSlice(fieldPtr, stringToSlice(value))
+			convertAndSetSlice(fieldPtr, stringToSlice(value, c.sliceDelim))
 		default:
 			convertAndSetValue(fieldPtr, value)
 		}
 	}
 }
 
-// stringToSlice converts a space delimited string to a slice of string.
+// stringToSlice converts a string to a slice of string, using the Builder's sliceDelim.
 // It strips surrounding whitespace of all entries.
 // If the input string is empty or all whitespace, nil is returned.
-func stringToSlice(s string) []string {
+func stringToSlice(s, delim string) []string {
+	if delim == "" {
+		panic("empty delimiter") // impossible or programmer error
+	}
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return nil
 	}
-	split := strings.Split(s, " ")
+	split := strings.Split(s, delim)
 	filtered := split[:0] // https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating
 	for _, v := range split {
+		v = strings.TrimSpace(v)
 		if v != "" {
 			filtered = append(filtered, v)
 		}

@@ -53,8 +53,9 @@ func Test_Integration(t *testing.T) {
 }
 
 func Test_stringToSlice(t *testing.T) {
+	t.Parallel()
 	type args struct {
-		in string
+		in, delim string
 	}
 	tests := []struct {
 		name string
@@ -63,23 +64,30 @@ func Test_stringToSlice(t *testing.T) {
 	}{
 		{
 			name: "empty",
-			args: args{in: ""},
+			args: args{in: "", delim: " "},
 			want: nil,
 		},
 		{
 			name: "whitespace",
-			args: args{in: "      "},
+			args: args{in: "      ", delim: " "},
 			want: nil,
 		},
 		{
 			name: "values",
-			args: args{in: "  a b c def ghi     "},
+			args: args{in: "  a b c def ghi     ", delim: " "},
+			want: []string{"a", "b", "c", "def", "ghi"},
+		},
+		{
+			name: "values - comma delim",
+			args: args{in: "  a, b, c ,def ,ghi,     ", delim: ","},
 			want: []string{"a", "b", "c", "def", "ghi"},
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if got := stringToSlice(tt.args.in); !reflect.DeepEqual(got, tt.want) {
+			t.Parallel()
+			if got := stringToSlice(tt.args.in, tt.args.delim); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("stringToSlice() = %v, want %v", got, tt.want)
 			}
 		})
@@ -87,6 +95,7 @@ func Test_stringToSlice(t *testing.T) {
 }
 
 func Test_convertAndSetValue(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		settable interface{}
 		s        string
