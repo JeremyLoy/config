@@ -6,7 +6,9 @@ go:
 before_install:
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/goimports
+  - go get -u golang.org/x/lint/golint
 script:
   - go vet
+  - golint -set_exit_status
   - test -z "$(goimports -l .)"
   - $HOME/gopath/bin/goveralls -service=travis-ci
