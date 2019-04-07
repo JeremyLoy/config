@@ -79,7 +79,6 @@ func Example_structTags() {
 	var c MyConfig
 	config.FromEnv().To(&c)
 
-	// db:// was only set in ENV
 	fmt.Println(c.DatabaseURL)
 
 	// Output:

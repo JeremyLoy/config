@@ -19,7 +19,7 @@
 //   PARENT__CHILD
 //
 // Env vars map to struct fields case insensitively.
-//   NOTE: Also true when using struct tags.
+// NOTE: Also true when using struct tags.
 package config
 
 import (
