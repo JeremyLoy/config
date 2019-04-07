@@ -4,6 +4,7 @@ package config_test
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -86,4 +87,18 @@ func Example_structTags() {
 
 	// Output:
 	// db://
+}
+
+func Example_errorHandling() {
+	var c MyConfig
+	err := config.From("i_dont_exist.txt").FromEnv().To(&c)
+
+	if e, ok := err.(*config.Error); ok {
+		switch {
+		case e.FileNotExistErrors():
+			// continue, allow fields
+		case e.FieldParseErrors() || e.FileParseErrors():
+			log.Fatalf("Failed to parse some fields: %v", e.Error())
+		}
+	}
 }

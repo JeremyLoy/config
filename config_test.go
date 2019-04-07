@@ -62,6 +62,22 @@ func Test_Integration(t *testing.T) {
 	os.Clearenv()
 }
 
+func Test_Integration_FileNotFound(t *testing.T) {
+	t.Parallel()
+
+	var testConfig struct{}
+	err := From("i_dont_exist.txt").To(&testConfig)
+
+	confErr := err.(*Error)
+
+	if !confErr.FileNotExistErrors() {
+		t.Errorf("expected file not found error")
+	}
+	if confErr.FileParseErrors() {
+		t.Errorf("expected to not have general file erros")
+	}
+}
+
 func Test_stringToSlice(t *testing.T) {
 	t.Parallel()
 	type args struct {
@@ -232,7 +248,8 @@ func Test_convertAndSetValue(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			convertAndSetValue(tt.args.settable, tt.args.s)
+			err := convertAndSetValue(tt.args.settable, tt.args.s)
+			t.Log(err)
 			if !reflect.DeepEqual(tt.args.settable, tt.want) {
 				t.Errorf("convertAndSetValue = %v, want %v", tt.args.settable, tt.want)
 			}
@@ -272,7 +289,8 @@ func Test_convertAndSetSlice(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			convertAndSetSlice(tt.args.slicePtr, tt.args.values)
+			b := &Builder{}
+			b.convertAndSetSlice(tt.args.slicePtr, tt.args.values, "TODO")
 		})
 	}
 }

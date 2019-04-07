@@ -41,6 +41,7 @@ const (
 type Builder struct {
 	structDelim, sliceDelim string
 	configMap               map[string]string
+	err                     *Error
 }
 
 func newBuilder() *Builder {
@@ -59,8 +60,10 @@ func newBuilder() *Builder {
 // It panics under the following circumstances:
 //     * target is not a struct pointer
 //     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
-func (c *Builder) To(target interface{}) {
-	c.populateStructRecursively(target, "")
+// It either returns nil or a *Error, aggregating all errors encountered by Builder
+func (b *Builder) To(target interface{}) error {
+	b.populateStructRecursively(target, "")
+	return b.err
 }
 
 // From returns a new Builder, populated with the values from file.
@@ -71,10 +74,11 @@ func From(file string) *Builder {
 
 // From merges new values from file into the current config state, returning the Builder.
 // It panics if unable to open the file.
-func (c *Builder) From(file string) *Builder {
+func (b *Builder) From(file string) *Builder {
 	f, err := os.Open(file)
 	if err != nil {
-		panic(fmt.Sprintf("oops!: %v", err))
+		b.appendFileError(err)
+		return b
 	}
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
@@ -82,8 +86,11 @@ func (c *Builder) From(file string) *Builder {
 	for scanner.Scan() {
 		ss = append(ss, scanner.Text())
 	}
-	c.mergeConfig(stringsToMap(ss))
-	return c
+	if err := scanner.Err(); err != nil {
+		b.appendFileError(err)
+	}
+	b.mergeConfig(stringsToMap(ss))
+	return b
 }
 
 // FromEnv returns a new Builder, populated with environment variables
@@ -92,14 +99,14 @@ func FromEnv() *Builder {
 }
 
 // FromEnv merges new values from the environment into the current config state, returning the Builder.
-func (c *Builder) FromEnv() *Builder {
-	c.mergeConfig(stringsToMap(os.Environ()))
-	return c
+func (b *Builder) FromEnv() *Builder {
+	b.mergeConfig(stringsToMap(os.Environ()))
+	return b
 }
 
-func (c *Builder) mergeConfig(in map[string]string) {
+func (b *Builder) mergeConfig(in map[string]string) {
 	for k, v := range in {
-		c.configMap[k] = v
+		b.configMap[k] = v
 	}
 }
 
@@ -125,22 +132,24 @@ func stringsToMap(ss []string) map[string]string {
 // slices and values are set directly.
 // nested structs recurse through this function.
 // values are derived from the field name, prefixed with the field names of any parents.
-func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string) {
+func (b *Builder) populateStructRecursively(structPtr interface{}, prefix string) {
 	structValue := reflect.ValueOf(structPtr).Elem()
 	for i := 0; i < structValue.NumField(); i++ {
 		fieldType := structValue.Type().Field(i)
 		fieldPtr := structValue.Field(i).Addr().Interface()
 
 		key := getKey(fieldType, prefix)
-		value := c.configMap[key]
+		value := b.configMap[key]
 
 		switch fieldType.Type.Kind() {
 		case reflect.Struct:
-			c.populateStructRecursively(fieldPtr, key+c.structDelim)
+			b.populateStructRecursively(fieldPtr, key+b.structDelim)
 		case reflect.Slice:
-			convertAndSetSlice(fieldPtr, stringToSlice(value, c.sliceDelim))
+			b.convertAndSetSlice(fieldPtr, stringToSlice(value, b.sliceDelim), key)
 		default:
-			convertAndSetValue(fieldPtr, value)
+			if err := convertAndSetValue(fieldPtr, value); err != nil {
+				b.appendFieldError(err, key, fieldType.Type.String())
+			}
 		}
 	}
 }
@@ -183,68 +192,98 @@ func stringToSlice(s, delim string) []string {
 // convertAndSetSlice builds a slice of a dynamic type.
 // It converts each entry in "values" to the elemType of the passed in slice.
 // The slice remains nil if "values" is empty.
-func convertAndSetSlice(slicePtr interface{}, values []string) {
+func (b *Builder) convertAndSetSlice(slicePtr interface{}, values []string, fieldName string) {
 	sliceVal := reflect.ValueOf(slicePtr).Elem()
 	elemType := sliceVal.Type().Elem()
 
-	for _, s := range values {
+	for i, s := range values {
 		valuePtr := reflect.New(elemType)
-		convertAndSetValue(valuePtr.Interface(), s)
-		sliceVal.Set(reflect.Append(sliceVal, valuePtr.Elem()))
+		if err := convertAndSetValue(valuePtr.Interface(), s); err != nil {
+			b.appendSliceError(err, fieldName, elemType.String(), i)
+		} else {
+			sliceVal.Set(reflect.Append(sliceVal, valuePtr.Elem()))
+		}
 	}
 }
 
-// convertAndSetValue receives a settable of an arbitrary kind, and sets its value to s".
+// convertAndSetValue receives a settable of an arbitrary kind, and sets its value to s.
 // It calls the matching strconv function on s, based on the settable's kind.
 // All basic types (bool, int, float, string) are handled by this function.
 // Slice and struct are handled elsewhere.
 // Unhandled kinds panic.
 // Errors in string conversion are ignored, and the settable remains a zero value.
-func convertAndSetValue(settable interface{}, s string) {
+func convertAndSetValue(settable interface{}, s string) (err error) {
 	settableValue := reflect.ValueOf(settable).Elem()
 	switch settableValue.Kind() {
 	case reflect.String:
 		settableValue.SetString(s)
 	case reflect.Int:
-		val, _ := strconv.ParseInt(s, 10, 0)
-		settableValue.SetInt(val)
+		var val int64
+		if val, err = strconv.ParseInt(s, 10, 0); err == nil {
+			settableValue.SetInt(val)
+		}
 	case reflect.Int8:
-		val, _ := strconv.ParseInt(s, 10, 8)
-		settableValue.SetInt(val)
+		var val int64
+		if val, err = strconv.ParseInt(s, 10, 8); err == nil {
+			settableValue.SetInt(val)
+		}
 	case reflect.Int16:
-		val, _ := strconv.ParseInt(s, 10, 16)
-		settableValue.SetInt(val)
+		var val int64
+		if val, err = strconv.ParseInt(s, 10, 16); err == nil {
+			settableValue.SetInt(val)
+		}
 	case reflect.Int32:
-		val, _ := strconv.ParseInt(s, 10, 32)
-		settableValue.SetInt(val)
+		var val int64
+		if val, err = strconv.ParseInt(s, 10, 32); err == nil {
+			settableValue.SetInt(val)
+		}
 	case reflect.Int64:
-		val, _ := strconv.ParseInt(s, 10, 64)
-		settableValue.SetInt(val)
+		var val int64
+		if val, err = strconv.ParseInt(s, 10, 64); err == nil {
+			settableValue.SetInt(val)
+		}
 	case reflect.Uint:
-		val, _ := strconv.ParseUint(s, 10, 0)
-		settableValue.SetUint(val)
+		var val uint64
+		if val, err = strconv.ParseUint(s, 10, 0); err == nil {
+			settableValue.SetUint(val)
+		}
 	case reflect.Uint8:
-		val, _ := strconv.ParseUint(s, 10, 8)
-		settableValue.SetUint(val)
+		var val uint64
+		if val, err = strconv.ParseUint(s, 10, 8); err == nil {
+			settableValue.SetUint(val)
+		}
 	case reflect.Uint16:
-		val, _ := strconv.ParseUint(s, 10, 16)
-		settableValue.SetUint(val)
+		var val uint64
+		if val, err = strconv.ParseUint(s, 10, 16); err == nil {
+			settableValue.SetUint(val)
+		}
 	case reflect.Uint32:
-		val, _ := strconv.ParseUint(s, 10, 32)
-		settableValue.SetUint(val)
+		var val uint64
+		if val, err = strconv.ParseUint(s, 10, 32); err == nil {
+			settableValue.SetUint(val)
+		}
 	case reflect.Uint64:
-		val, _ := strconv.ParseUint(s, 10, 64)
-		settableValue.SetUint(val)
+		var val uint64
+		if val, err = strconv.ParseUint(s, 10, 64); err == nil {
+			settableValue.SetUint(val)
+		}
 	case reflect.Bool:
-		val, _ := strconv.ParseBool(s)
-		settableValue.SetBool(val)
+		var val bool
+		if val, err = strconv.ParseBool(s); err == nil {
+			settableValue.SetBool(val)
+		}
 	case reflect.Float32:
-		val, _ := strconv.ParseFloat(s, 32)
-		settableValue.SetFloat(val)
+		var val float64
+		if val, err = strconv.ParseFloat(s, 32); err == nil {
+			settableValue.SetFloat(val)
+		}
 	case reflect.Float64:
-		val, _ := strconv.ParseFloat(s, 64)
-		settableValue.SetFloat(val)
+		var val float64
+		if val, err = strconv.ParseFloat(s, 64); err == nil {
+			settableValue.SetFloat(val)
+		}
 	default:
 		panic(fmt.Sprintf("cannot handle kind %v\n", settableValue.Type().Kind()))
 	}
+	return
 }
