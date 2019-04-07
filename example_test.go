@@ -45,10 +45,10 @@ func Example() {
 
 func Example_fromFileWithOverride() {
 	tempFile, _ := ioutil.TempFile("", "temp")
-	tempFile.Write([]byte(strings.Join([]string{"PORT=1234", "FEATUREFLAG=true"}, "\n")))
+	tempFile.Write([]byte(strings.Join([]string{"PORT=1234", "FEATURE_FLAG=true"}, "\n")))
 	tempFile.Close()
 
-	os.Setenv("DATABASEURL", "db://")
+	os.Setenv("DATABASE_URL", "db://")
 	os.Setenv("PORT", "5678")
 
 	var c MyConfig
