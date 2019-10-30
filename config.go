@@ -24,7 +24,9 @@ package config
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
@@ -72,15 +74,17 @@ func From(file string) *Builder {
 // From merges new values from file into the current config state, returning the Builder.
 // It panics if unable to open the file.
 func (c *Builder) From(file string) *Builder {
-	f, err := os.Open(file)
+	content, err := ioutil.ReadFile(file)
 	if err != nil {
-		panic(fmt.Sprintf("oops!: %v", err))
+		panic(fmt.Sprintf("config: failed to read file %v: %v", file, err))
 	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(bytes.NewReader(content))
 	var ss []string
 	for scanner.Scan() {
 		ss = append(ss, scanner.Text())
+	}
+	if scanner.Err() != nil {
+		panic(fmt.Sprintf("config: failed to scan file %v: %v", file, scanner.Err()))
 	}
 	c.mergeConfig(stringsToMap(ss))
 	return c
@@ -245,6 +249,6 @@ func convertAndSetValue(settable interface{}, s string) {
 		val, _ := strconv.ParseFloat(s, 64)
 		settableValue.SetFloat(val)
 	default:
-		panic(fmt.Sprintf("cannot handle kind %v\n", settableValue.Type().Kind()))
+		panic(fmt.Sprintf("config: cannot handle kind %v", settableValue.Type().Kind()))
 	}
 }
