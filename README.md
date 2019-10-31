@@ -24,7 +24,7 @@ err := config.FromEnv().To(&c)
 
 ## How It Works
 
-Its just simple, pure stdlib. 
+It's just simple, pure stdlib. 
 
 * A field's type determines what [strconv](https://golang.org/pkg/strconv/) function is called.
 * All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
@@ -34,7 +34,7 @@ Its just simple, pure stdlib.
   config.From("dev.config").FromEnv().To(&c)
   ```
     
-* Unset values remain as their native [zero value](https://tour.golang.org/basics/12) 
+* Unset values remain intact or as their native [zero value](https://tour.golang.org/basics/12) 
 * Nested structs/subconfigs are delimited with double underscore 
     * e.g. `PARENT__CHILD`
 * Env vars map to struct fields case insensitively
@@ -46,7 +46,7 @@ Its just simple, pure stdlib.
 
 ## Why you should use this
 
-* Its the cloud-native way to manage config. See [12 Factor Apps](https://12factor.net/config)
+* It's the cloud-native way to manage config. See [12 Factor Apps](https://12factor.net/config)
 * Simple:
     * only 2 lines to configure.
 * Composeable:

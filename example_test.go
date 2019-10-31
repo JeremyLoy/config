@@ -44,6 +44,25 @@ func Example() {
 	// [0.0.0.0 1.1.1.1 2.2.2.2] 3
 }
 
+func Example_defaults() {
+	os.Clearenv()
+	os.Setenv("DATABASE_URL", "production://")
+
+	// existing values on the struct are maintained if unset in the env
+	c := MyConfig{
+		DatabaseURL: "development://",
+		Port:        1234,
+	}
+	config.FromEnv().To(&c)
+
+	fmt.Println(c.DatabaseURL)
+	fmt.Println(c.Port)
+
+	// Output:
+	// production://
+	// 1234
+}
+
 func Example_errorHandling() {
 	os.Clearenv()
 	os.Setenv("PORT", "X")

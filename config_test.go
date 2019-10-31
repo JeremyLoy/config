@@ -24,6 +24,7 @@ func Test_Integration(t *testing.T) {
 		G []int
 		H uint8
 		I string
+		K string
 	}
 
 	file, err := ioutil.TempFile("", "testenv")
@@ -62,7 +63,9 @@ func Test_Integration(t *testing.T) {
 		t.Fatalf("failed to set environ: %v", err)
 	}
 
-	var got testConfig
+	got := testConfig{
+		K: "hardcoded",
+	}
 	want := testConfig{
 		A: 1,
 		B: "overridden",
@@ -75,6 +78,7 @@ func Test_Integration(t *testing.T) {
 		G: []int{1, 2},
 		H: 0,
 		I: "",
+		K: "hardcoded",
 	}
 	wantFailedFields := []string{"file[" + nonExistFile.Name() + "]", "g[1]", "h"}
 

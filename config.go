@@ -13,7 +13,7 @@
 // Later values override previous values.
 //   config.From("dev.config").FromEnv().To(&c)
 //
-// Unset values remain as their native zero value: https://tour.golang.org/basics/12.
+// Unset values remain intact or as their native zero value: https://tour.golang.org/basics/12.
 //
 // Nested structs/subconfigs are delimited with double underscore.
 //   PARENT__CHILD
