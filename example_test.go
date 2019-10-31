@@ -44,6 +44,18 @@ func Example() {
 	// [0.0.0.0 1.1.1.1 2.2.2.2] 3
 }
 
+func Example_errorHandling() {
+	os.Clearenv()
+	os.Setenv("PORT", "X")
+
+	var c MyConfig
+	err := config.FromEnv().To(&c)
+	fmt.Println(err)
+
+	// Output:
+	// config: the following fields had errors: [port feature_flag]
+}
+
 func Example_fromFileWithOverride() {
 	tempFile, _ := ioutil.TempFile("", "temp")
 	tempFile.Write([]byte(strings.Join([]string{"PORT=1234", "FEATURE_FLAG=true"}, "\n")))

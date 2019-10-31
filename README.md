@@ -19,7 +19,7 @@ type MyConfig struct {
 }
 
 var c MyConfig
-config.FromEnv().To(&c)
+err := config.FromEnv().To(&c)
 ```
 
 ## How It Works
@@ -39,6 +39,10 @@ Its just simple, pure stdlib.
     * e.g. `PARENT__CHILD`
 * Env vars map to struct fields case insensitively
     * NOTE: Also true when using struct tags.
+* Any errors encountered are aggregated into a single error value
+    * the entirety of the struct is always attempted
+    * failed conversions (i.e. converting "x" to an int) and file i/o are the only sources of errors
+        * missing values are not errors
 
 ## Why you should use this
 

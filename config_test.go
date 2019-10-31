@@ -14,12 +14,16 @@ func Test_Integration(t *testing.T) {
 	type D struct {
 		E bool
 		F bool `config:"feRdiNaND"` // case insensitive
+		J *int
 	}
 	type testConfig struct {
 		A int    `config:"     "` // no-op/ignored
 		B string `config:"B"`     // no effect
 		C []int
 		D D `config:"dOg"` // case insensitive for sub-configs
+		G []int
+		H uint8
+		I string
 	}
 
 	file, err := ioutil.TempFile("", "testenv")
@@ -28,12 +32,21 @@ func Test_Integration(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
+	nonExistFile, err := ioutil.TempFile("", "nonexistfile")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %v", err)
+	}
+	os.Remove(nonExistFile.Name())
+
 	testData := strings.Join([]string{
 		"A=1",
 		"B=abc",
 		"C=4 5 6",
 		"DoG__E=true",
 		"DoG__FErDINANd=true",
+		"G=1 y 2", // should log G[1] as it is an incorrect type, but still work with 0 and 2
+		"H=-84",   // should log H as it is an incorrect type
+		"I=",      // should NOT log I as there is no way to tell if it is missing or deliberately empty
 	}, "\n")
 	_, err = file.Write([]byte(testData))
 	if err != nil {
@@ -52,14 +65,77 @@ func Test_Integration(t *testing.T) {
 		D: D{
 			E: true,
 			F: true,
+			J: nil,
 		},
+		G: []int{1, 2},
+		H: 0,
+		I: "",
 	}
+	wantFailedFields := []string{"file[" + nonExistFile.Name() + "]", "dog__j", "g[1]", "h"}
 
-	From(file.Name()).FromEnv().To(&got)
+	builder := From(file.Name()).From(nonExistFile.Name()).FromEnv()
+	gotErr := builder.To(&got)
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("Integration: got %+v, want %+v", got, want)
+		t.Errorf("Integration: got %+v, wantPanic %+v", got, want)
+	}
+	if gotErr == nil {
+		t.Errorf("Integration: should have had an error")
+	}
+	if !reflect.DeepEqual(builder.failedFields, wantFailedFields) {
+		t.Errorf("Integration: gotFailedFields %+v, wantFailedFields %+v", builder.failedFields, wantFailedFields)
 	}
 	os.Clearenv()
+}
+
+func Test_shouldPanic(t *testing.T) {
+	t.Parallel()
+
+	var s struct{}
+	var i int
+
+	tests := []struct {
+		name      string
+		target    interface{}
+		wantPanic bool
+	}{
+		{
+			name:      "*struct",
+			target:    &s,
+			wantPanic: false,
+		},
+		{
+			name:      "struct",
+			target:    s,
+			wantPanic: true,
+		},
+		{
+			name:      "*int",
+			target:    &i,
+			wantPanic: true,
+		},
+		{
+			name:      "int",
+			target:    &i,
+			wantPanic: true,
+		},
+		{
+			name:      "nil",
+			target:    nil,
+			wantPanic: true,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			defer func() {
+				if r := recover(); (r == nil) == tt.wantPanic {
+					t.Errorf("should have caused a panic")
+				}
+			}()
+			_ = FromEnv().To(tt.target)
+		})
+	}
 }
 
 func Test_stringToSlice(t *testing.T) {
@@ -111,9 +187,10 @@ func Test_convertAndSetValue(t *testing.T) {
 		s        string
 	}
 	tests := []struct {
-		name string
-		args args
-		want interface{}
+		name    string
+		args    args
+		want    interface{}
+		wantErr bool
 	}{
 		{
 			name: "int",
@@ -227,14 +304,26 @@ func Test_convertAndSetValue(t *testing.T) {
 			},
 			want: func() interface{} { v := "abc"; return &v }(),
 		},
+		{
+			name: "bad convert",
+			args: args{
+				settable: new(int),
+				s:        "abc",
+			},
+			want:    func() interface{} { v := 0; return &v }(),
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			convertAndSetValue(tt.args.settable, tt.args.s)
+			gotErr := convertAndSetValue(tt.args.settable, tt.args.s)
 			if !reflect.DeepEqual(tt.args.settable, tt.want) {
 				t.Errorf("convertAndSetValue = %v, want %v", tt.args.settable, tt.want)
+			}
+			if gotErr == tt.wantErr {
+				t.Errorf("convertAndSetValue err = %v, want %v", gotErr, tt.wantErr)
 			}
 		})
 	}
@@ -247,9 +336,10 @@ func Test_convertAndSetSlice(t *testing.T) {
 		values   []string
 	}
 	tests := []struct {
-		name string
-		args args
-		want interface{}
+		name    string
+		args    args
+		want    interface{}
+		wantErr []int
 	}{
 		{
 			name: "string slice",
@@ -257,7 +347,7 @@ func Test_convertAndSetSlice(t *testing.T) {
 				slicePtr: new([]string),
 				values:   []string{"a", "b", "c", "def"},
 			},
-			want: func() interface{} { v := []string{"a", "b", "c", "def"}; return &v },
+			want: func() interface{} { v := []string{"a", "b", "c", "def"}; return &v }(),
 		},
 		{
 			name: "int slice",
@@ -265,14 +355,30 @@ func Test_convertAndSetSlice(t *testing.T) {
 				slicePtr: new([]int),
 				values:   []string{"1", "2", "3", "4"},
 			},
-			want: func() interface{} { v := []int{1, 2, 3, 4}; return &v },
+			want: func() interface{} { v := []int{1, 2, 3, 4}; return &v }(),
+		},
+		{
+			name: "int slice - bad values",
+			args: args{
+				slicePtr: new([]int),
+				values:   []string{"1", "x", "3", "4"},
+			},
+			want:    func() interface{} { v := []int{1, 3, 4}; return &v }(),
+			wantErr: []int{1},
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			convertAndSetSlice(tt.args.slicePtr, tt.args.values)
+			gotErr := convertAndSetSlice(tt.args.slicePtr, tt.args.values)
+			if !reflect.DeepEqual(tt.args.slicePtr, tt.want) {
+				t.Errorf("convertAndSetSlice = %v, want: %v", tt.args.slicePtr, tt.want)
+			}
+			if !reflect.DeepEqual(gotErr, tt.wantErr) {
+				t.Errorf("convertAndSetSlice err = %v, want: %v", gotErr, tt.wantErr)
+			}
+
 		})
 	}
 }
