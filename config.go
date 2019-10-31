@@ -228,6 +228,9 @@ func convertAndSetSlice(slicePtr interface{}, values []string) []int {
 // False is used to prevent accidental logging of secrets as
 // as the strconv include s in their error message.
 func convertAndSetValue(settable interface{}, s string) bool {
+	if s == "" {
+		return true
+	}
 	settableValue := reflect.ValueOf(settable).Elem()
 	var (
 		err error

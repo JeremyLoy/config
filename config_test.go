@@ -44,6 +44,7 @@ func Test_Integration(t *testing.T) {
 		"C=4 5 6",
 		"DoG__E=true",
 		"DoG__FErDINANd=true",
+		// should NOT log doc_j as it is not provided
 		"G=1 y 2", // should log G[1] as it is an incorrect type, but still work with 0 and 2
 		"H=-84",   // should log H as it is an incorrect type
 		"I=",      // should NOT log I as there is no way to tell if it is missing or deliberately empty
@@ -54,7 +55,11 @@ func Test_Integration(t *testing.T) {
 	}
 	err = os.Setenv("B", "overridden")
 	if err != nil {
-		t.Fatalf("failed to override environ: %v", err)
+		t.Fatalf("failed to set environ: %v", err)
+	}
+	err = os.Setenv("C", "") // this should NOT override as it is empty
+	if err != nil {
+		t.Fatalf("failed to set environ: %v", err)
 	}
 
 	var got testConfig
@@ -71,12 +76,12 @@ func Test_Integration(t *testing.T) {
 		H: 0,
 		I: "",
 	}
-	wantFailedFields := []string{"file[" + nonExistFile.Name() + "]", "dog__j", "g[1]", "h"}
+	wantFailedFields := []string{"file[" + nonExistFile.Name() + "]", "g[1]", "h"}
 
 	builder := From(file.Name()).From(nonExistFile.Name()).FromEnv()
 	gotErr := builder.To(&got)
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("Integration: got %+v, wantPanic %+v", got, want)
+		t.Errorf("Integration: got %+v, want %+v", got, want)
 	}
 	if gotErr == nil {
 		t.Errorf("Integration: should have had an error")

@@ -53,7 +53,7 @@ func Example_errorHandling() {
 	fmt.Println(err)
 
 	// Output:
-	// config: the following fields had errors: [port feature_flag]
+	// config: the following fields had errors: [port]
 }
 
 func Example_fromFileWithOverride() {
