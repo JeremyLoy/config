@@ -33,12 +33,6 @@ func Test_Integration(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
-	nonExistFile, err := ioutil.TempFile("", "nonexistfile")
-	if err != nil {
-		t.Fatalf("failed to create temporary file: %v", err)
-	}
-	os.Remove(nonExistFile.Name())
-
 	testData := strings.Join([]string{
 		"A=1",
 		"B=abc",
@@ -80,9 +74,9 @@ func Test_Integration(t *testing.T) {
 		I: "",
 		K: "hardcoded",
 	}
-	wantFailedFields := []string{"file[" + nonExistFile.Name() + "]", "g[1]", "h"}
+	wantFailedFields := []string{"file[nonexistfile]", "g[1]", "h"}
 
-	builder := From(file.Name()).From(nonExistFile.Name()).FromEnv()
+	builder := From(file.Name()).From("nonexistfile").FromEnv()
 	gotErr := builder.To(&got)
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Integration: got %+v, want %+v", got, want)
