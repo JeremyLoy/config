@@ -31,6 +31,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -242,44 +243,25 @@ func convertAndSetValue(settable interface{}, s string) bool {
 	switch settableValue.Kind() {
 	case reflect.String:
 		settableValue.SetString(s)
-	case reflect.Int:
-		i, err = strconv.ParseInt(s, 10, 0)
-		settableValue.SetInt(i)
-	case reflect.Int8:
-		i, err = strconv.ParseInt(s, 10, 8)
-		settableValue.SetInt(i)
-	case reflect.Int16:
-		i, err = strconv.ParseInt(s, 10, 16)
-		settableValue.SetInt(i)
-	case reflect.Int32:
-		i, err = strconv.ParseInt(s, 10, 32)
-		settableValue.SetInt(i)
-	case reflect.Int64:
-		i, err = strconv.ParseInt(s, 10, 64)
-		settableValue.SetInt(i)
-	case reflect.Uint:
-		u, err = strconv.ParseUint(s, 10, 0)
-		settableValue.SetUint(u)
-	case reflect.Uint8:
-		u, err = strconv.ParseUint(s, 10, 8)
-		settableValue.SetUint(u)
-	case reflect.Uint16:
-		u, err = strconv.ParseUint(s, 10, 16)
-		settableValue.SetUint(u)
-	case reflect.Uint32:
-		u, err = strconv.ParseUint(s, 10, 32)
-		settableValue.SetUint(u)
-	case reflect.Uint64:
-		u, err = strconv.ParseUint(s, 10, 64)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if settableValue.Type().PkgPath() == "time" && settableValue.Type().Name() == "Duration" {
+			var d time.Duration
+			d, err = time.ParseDuration(s)
+			i = int64(d)
+		} else {
+			i, err = strconv.ParseInt(s, 10, settableValue.Type().Bits())
+		}
+		if err == nil {
+			settableValue.SetInt(i)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		u, err = strconv.ParseUint(s, 10, settableValue.Type().Bits())
 		settableValue.SetUint(u)
 	case reflect.Bool:
 		b, err = strconv.ParseBool(s)
 		settableValue.SetBool(b)
-	case reflect.Float32:
-		f, err = strconv.ParseFloat(s, 32)
-		settableValue.SetFloat(f)
-	case reflect.Float64:
-		f, err = strconv.ParseFloat(s, 64)
+	case reflect.Float32, reflect.Float64:
+		f, err = strconv.ParseFloat(s, settableValue.Type().Bits())
 		settableValue.SetFloat(f)
 	default:
 		err = fmt.Errorf("config: cannot handle kind %v", settableValue.Type().Kind())

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func Test_Integration(t *testing.T) {
@@ -25,6 +26,8 @@ func Test_Integration(t *testing.T) {
 		H uint8
 		I string
 		K string
+		L time.Duration
+		M int8
 	}
 
 	file, err := ioutil.TempFile("", "testenv")
@@ -32,6 +35,11 @@ func Test_Integration(t *testing.T) {
 		t.Fatalf("failed to create temporary file: %v", err)
 	}
 	defer os.Remove(file.Name())
+
+	eightHours, err := time.ParseDuration("8h")
+	if err != nil {
+		panic(err)
+	}
 
 	testData := strings.Join([]string{
 		"A=1",
@@ -43,6 +51,8 @@ func Test_Integration(t *testing.T) {
 		"G=1 y 2", // should log G[1] as it is an incorrect type, but still work with 0 and 2
 		"H=-84",   // should log H as it is an incorrect type
 		"I=",      // should NOT log I as there is no way to tell if it is missing or deliberately empty
+		"L=8h",
+		"M=128", // should fail as it is out of bounds for an int8
 	}, "\n")
 	_, err = file.Write([]byte(testData))
 	if err != nil {
@@ -73,8 +83,10 @@ func Test_Integration(t *testing.T) {
 		H: 0,
 		I: "",
 		K: "hardcoded",
+		L: eightHours,
+		M: 0,
 	}
-	wantFailedFields := []string{"file[nonexistfile]", "g[1]", "h"}
+	wantFailedFields := []string{"file[nonexistfile]", "g[1]", "h", "m"}
 
 	builder := From(file.Name()).From("nonexistfile").FromEnv()
 	gotErr := builder.To(&got)
