@@ -40,6 +40,10 @@ const (
 	sliceDelim   = " "
 )
 
+type Setter interface {
+	Set(string) error
+}
+
 // Builder contains the current configuration state.
 type Builder struct {
 	structDelim, sliceDelim string
@@ -232,6 +236,9 @@ func convertAndSetSlice(slicePtr reflect.Value, values []string) []int {
 func convertAndSetValue(settable reflect.Value, s string) bool {
 	if s == "" {
 		return true
+	}
+	if v, ok := settable.Interface().(Setter); ok {
+		return v.Set(s) == nil
 	}
 	settableValue := settable.Elem()
 	var (

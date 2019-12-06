@@ -9,26 +9,35 @@ import (
 	"time"
 )
 
+type CustomI int
+
+func (i *CustomI) Set(s string) error {
+	*i = CustomI(999999999)
+	return nil
+}
+
+// cannot be Parallelized as it manipulates env vars.
+// It must clear env afterwards to avoid bleeding env changes.
+type D struct {
+	E bool
+	F bool `config:"feRdiNaND"` // case insensitive
+	J *int
+}
+type testConfig struct {
+	A int    `config:"     "` // no-op/ignored
+	B string `config:"B"`     // no effect
+	C []int
+	D D `config:"dOg"` // case insensitive for sub-configs
+	G []int
+	H uint8
+	I string
+	K string
+	L time.Duration
+	M int8
+	N CustomI
+}
+
 func Test_Integration(t *testing.T) {
-	// cannot be Parallelized as it manipulates env vars.
-	// It must clear env afterwards to avoid bleeding env changes.
-	type D struct {
-		E bool
-		F bool `config:"feRdiNaND"` // case insensitive
-		J *int
-	}
-	type testConfig struct {
-		A int    `config:"     "` // no-op/ignored
-		B string `config:"B"`     // no effect
-		C []int
-		D D `config:"dOg"` // case insensitive for sub-configs
-		G []int
-		H uint8
-		I string
-		K string
-		L time.Duration
-		M int8
-	}
 
 	file, err := ioutil.TempFile("", "testenv")
 	if err != nil {
@@ -53,6 +62,7 @@ func Test_Integration(t *testing.T) {
 		"I=",      // should NOT log I as there is no way to tell if it is missing or deliberately empty
 		"L=8h",
 		"M=128", // should fail as it is out of bounds for an int8
+		"N=123", // should instead be 9s using the custom Setter interface
 	}, "\n")
 	_, err = file.Write([]byte(testData))
 	if err != nil {
@@ -85,6 +95,7 @@ func Test_Integration(t *testing.T) {
 		K: "hardcoded",
 		L: eightHours,
 		M: 0,
+		N: 999999999,
 	}
 	wantFailedFields := []string{"file[nonexistfile]", "g[1]", "h", "m"}
 
