@@ -256,13 +256,19 @@ func convertAndSetValue(settable interface{}, s string) bool {
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		u, err = strconv.ParseUint(s, 10, settableValue.Type().Bits())
-		settableValue.SetUint(u)
+		if err == nil {
+			settableValue.SetUint(u)
+		}
 	case reflect.Bool:
 		b, err = strconv.ParseBool(s)
-		settableValue.SetBool(b)
+		if err == nil {
+			settableValue.SetBool(b)
+		}
 	case reflect.Float32, reflect.Float64:
 		f, err = strconv.ParseFloat(s, settableValue.Type().Bits())
-		settableValue.SetFloat(f)
+		if err == nil {
+			settableValue.SetFloat(f)
+		}
 	default:
 		err = fmt.Errorf("config: cannot handle kind %v", settableValue.Type().Kind())
 	}
