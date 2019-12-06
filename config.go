@@ -66,10 +66,11 @@ func newBuilder() *Builder {
 // It panics if:
 //     * target is not a struct pointer
 func (c *Builder) To(target interface{}) error {
-	if reflect.ValueOf(target).Kind() != reflect.Ptr || reflect.ValueOf(target).Elem().Kind() != reflect.Struct {
+	structPtr := reflect.ValueOf(target)
+	if structPtr.Kind() != reflect.Ptr || structPtr.Elem().Kind() != reflect.Struct {
 		panic("config: To(target) must be a *struct")
 	}
-	c.populateStructRecursively(target, "")
+	c.populateStructRecursively(structPtr, "")
 	if c.failedFields != nil {
 		return fmt.Errorf("config: the following fields had errors: %v", c.failedFields)
 	}
@@ -140,11 +141,11 @@ func stringsToMap(ss []string) map[string]string {
 // values are derived from the field name, prefixed with the field names of any parents.
 //
 // failed fields are added to the builder for error reporting
-func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string) {
-	structValue := reflect.ValueOf(structPtr).Elem()
+func (c *Builder) populateStructRecursively(structPtr reflect.Value, prefix string) {
+	structValue := structPtr.Elem()
 	for i := 0; i < structValue.NumField(); i++ {
 		fieldType := structValue.Type().Field(i)
-		fieldPtr := structValue.Field(i).Addr().Interface()
+		fieldPtr := structValue.Field(i).Addr()
 
 		key := getKey(fieldType, prefix)
 		value := c.configMap[key]
@@ -204,14 +205,14 @@ func stringToSlice(s, delim string) []string {
 // The slice remains nil if "values" is empty.
 // All values are attempted.
 // Returns the indices of failed values
-func convertAndSetSlice(slicePtr interface{}, values []string) []int {
-	sliceVal := reflect.ValueOf(slicePtr).Elem()
+func convertAndSetSlice(slicePtr reflect.Value, values []string) []int {
+	sliceVal := slicePtr.Elem()
 	elemType := sliceVal.Type().Elem()
 
 	var failedIndices []int
 	for i, s := range values {
 		valuePtr := reflect.New(elemType)
-		if !convertAndSetValue(valuePtr.Interface(), s) {
+		if !convertAndSetValue(valuePtr, s) {
 			failedIndices = append(failedIndices, i)
 		} else {
 			sliceVal.Set(reflect.Append(sliceVal, valuePtr.Elem()))
@@ -228,11 +229,11 @@ func convertAndSetSlice(slicePtr interface{}, values []string) []int {
 // An unhandled kind or a failed parse returns false.
 // False is used to prevent accidental logging of secrets as
 // as the strconv include s in their error message.
-func convertAndSetValue(settable interface{}, s string) bool {
+func convertAndSetValue(settable reflect.Value, s string) bool {
 	if s == "" {
 		return true
 	}
-	settableValue := reflect.ValueOf(settable).Elem()
+	settableValue := settable.Elem()
 	var (
 		err error
 		i   int64
