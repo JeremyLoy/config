@@ -333,7 +333,7 @@ func Test_convertAndSetValue(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotErr := convertAndSetValue(tt.args.settable, tt.args.s)
+			gotErr := convertAndSetValue(reflect.ValueOf(tt.args.settable), tt.args.s)
 			if !reflect.DeepEqual(tt.args.settable, tt.want) {
 				t.Errorf("convertAndSetValue = %v, want %v", tt.args.settable, tt.want)
 			}
@@ -386,7 +386,7 @@ func Test_convertAndSetSlice(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotErr := convertAndSetSlice(tt.args.slicePtr, tt.args.values)
+			gotErr := convertAndSetSlice(reflect.ValueOf(tt.args.slicePtr), tt.args.values)
 			if !reflect.DeepEqual(tt.args.slicePtr, tt.want) {
 				t.Errorf("convertAndSetSlice = %v, want: %v", tt.args.slicePtr, tt.want)
 			}
