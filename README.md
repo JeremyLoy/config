@@ -1,5 +1,5 @@
 # Config
-[![Documentation](https://godoc.org/github.com/JeremyLoy/config?status.svg)](http://godoc.org/github.com/JeremyLoy/config)
+[![Documentation](https://godoc.org/github.com/JeremyLoy/config?status.svg)](https://pkg.go.dev/github.com/JeremyLoy/config?tab=doc)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
 [![Build Status](https://travis-ci.org/JeremyLoy/config.svg?branch=master)](https://travis-ci.org/JeremyLoy/config)
 [![Go Report Card](https://goreportcard.com/badge/github.com/JeremyLoy/config)](https://goreportcard.com/report/github.com/JeremyLoy/config)
