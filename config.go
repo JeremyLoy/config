@@ -8,7 +8,7 @@
 //
 // All string conversion rules are as defined in the https://golang.org/pkg/strconv/ package.
 //
-// time.Duration follows the same parsing rules as time.ParseDuration
+// time.Duration follows the same parsing rules as https://golang.org/pkg/time#ParseDuration
 //
 // If chaining multiple data sources, data sets are merged.
 //
