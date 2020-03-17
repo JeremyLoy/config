@@ -28,6 +28,7 @@ It's just simple, pure stdlib.
 
 * A field's type determines what [strconv](https://golang.org/pkg/strconv/) function is called.
 * All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
+* time.Duration follows the same parsing rules as [time.ParseDuration](https://golang.org/pkg/time#ParseDuration)
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
   ```go

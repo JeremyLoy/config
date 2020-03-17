@@ -8,6 +8,8 @@
 //
 // All string conversion rules are as defined in the https://golang.org/pkg/strconv/ package.
 //
+// time.Duration follows the same parsing rules as time.ParseDuration
+//
 // If chaining multiple data sources, data sets are merged.
 //
 // Later values override previous values.
@@ -59,6 +61,7 @@ func newBuilder() *Builder {
 // Supported fields:
 //     * all int, uint, float variants
 //     * bool, struct, string
+//     * time.Duration
 //     * slice of any of the above, except for []struct{}
 // It returns an error if:
 //     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
