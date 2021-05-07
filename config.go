@@ -44,6 +44,7 @@ const (
 
 // Builder contains the current configuration state.
 type Builder struct {
+	prefix                  string
 	structDelim, sliceDelim string
 	configMap               map[string]string
 	failedFields            []string
@@ -73,11 +74,26 @@ func (c *Builder) To(target interface{}) error {
 	if structPtr.Kind() != reflect.Ptr || structPtr.Elem().Kind() != reflect.Struct {
 		panic("config: To(target) must be a *struct")
 	}
-	c.populateStructRecursively(structPtr, "")
+	c.populateStructRecursively(structPtr, c.prefix)
 	if c.failedFields != nil {
 		return fmt.Errorf("config: the following fields had errors: %v", c.failedFields)
 	}
 	return nil
+}
+
+// WithPrefix returns a new Builder, initialized with a prefix for field names.
+//
+// Only one prefix can be set. If called multiple times, the last value is used.
+func WithPrefix(prefix string) *Builder {
+	return newBuilder().WithPrefix(prefix)
+}
+
+// WithPrefix sets the prefix for field names.
+//
+// Only one prefix can be set. If called multiple times, the last value is used.
+func (c *Builder) WithPrefix(prefix string) *Builder {
+	c.prefix = prefix + c.structDelim
+	return c
 }
 
 // From returns a new Builder, populated with the values from file.

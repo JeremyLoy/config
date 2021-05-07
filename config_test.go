@@ -506,3 +506,36 @@ func Test_getKey(t *testing.T) {
 		})
 	}
 }
+
+func TestWithPrefix(t *testing.T) {
+	file, err := ioutil.TempFile("", "testenv")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %v", err)
+	}
+	defer os.Remove(file.Name())
+
+	_, err = file.Write([]byte("MYAPP__A=a"))
+	if err != nil {
+		t.Fatalf("failed to write test data to temp file: %v", err)
+	}
+	defer os.Unsetenv("MYAPP__B")
+	err = os.Setenv("MYAPP__B", "b")
+
+	type testconfig struct {
+		A string
+		B string
+	}
+	want := testconfig{
+		A: "a",
+		B: "b",
+	}
+	var got testconfig
+
+	gotErr := WithPrefix("MYAPP").From(file.Name()).FromEnv().To(&got)
+	if gotErr != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+}
