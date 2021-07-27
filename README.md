@@ -1,7 +1,7 @@
 # Config
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/JeremyLoy/config)](https://pkg.go.dev/github.com/JeremyLoy/config)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
-[![Build Status](https://travis-ci.org/JeremyLoy/config.svg?branch=master)](https://travis-ci.org/JeremyLoy/config)
+[![Build Status](https://github.com/JeremyLoy/config/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/JeremyLoy/config/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/JeremyLoy/config)](https://goreportcard.com/report/github.com/JeremyLoy/config)
 [![Coverage Status](https://coveralls.io/repos/github/JeremyLoy/config/badge.svg?branch=master)](https://coveralls.io/github/JeremyLoy/config?branch=master)
 [![GitHub issues](https://img.shields.io/github/issues/JeremyLoy/config.svg)](https://github.com/JeremyLoy/config/issues)
