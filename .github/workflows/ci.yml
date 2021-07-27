@@ -18,8 +18,16 @@ jobs:
         with:
           go-version: 1.16
 
-      - name: vet
-        run: go vet
+      - name: install deps
+        run: |
+          go install -modfile=go.tools.mod golang.org/x/tools/cmd/goimports
+          go install -modfile=go.tools.mod golang.org/x/lint/golint
+
+      - name: static analysis
+        run: |
+          golint -set_exit_status
+          go vet
+          test -z "$(goimports -l .)"
 
       - name: Test
-        run: go test -v ./...
+        run: go test -v
