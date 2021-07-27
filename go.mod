@@ -1,3 +1,3 @@
 module github.com/JeremyLoy/config
 
-go 1.12
+go 1.16
