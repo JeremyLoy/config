@@ -22,6 +22,7 @@ jobs:
         run: |
           go install -modfile=go.tools.mod golang.org/x/tools/cmd/goimports
           go install -modfile=go.tools.mod golang.org/x/lint/golint
+          go install -modfile=go.tools.mod github.com/mattn/goveralls
 
       - name: static analysis
         run: |
@@ -30,4 +31,6 @@ jobs:
           test -z "$(goimports -l .)"
 
       - name: Test
-        run: go test -v
+        run: goveralls -service=github
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
