@@ -70,6 +70,7 @@ func Test_Integration(t *testing.T) {
 	got := testConfig{
 		K: "hardcoded",
 	}
+	var sub D
 	want := testConfig{
 		A: 1,
 		B: "overridden",
@@ -90,8 +91,12 @@ func Test_Integration(t *testing.T) {
 
 	builder := From(file.Name()).From("nonexistfile").FromEnv()
 	gotErr := builder.To(&got)
+	_ = builder.Sub(&sub, "dog")
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Integration: got %+v, want %+v", got, want)
+	}
+	if !reflect.DeepEqual(sub, want.D) {
+		t.Errorf("Integration: got %+v, want %+v", sub, want.D)
 	}
 	if gotErr == nil {
 		t.Errorf("Integration: should have had an error")

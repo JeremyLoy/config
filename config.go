@@ -69,11 +69,20 @@ func newBuilder() *Builder {
 // It panics if:
 //     * target is not a struct pointer
 func (c *Builder) To(target interface{}) error {
+	return c.decode(target, "")
+}
+
+// Sub behaves the same as To, however it maps configuration to the struct starting at the given prefix.
+func (c *Builder) Sub(target interface{}, prefix string) error {
+	return c.decode(target, prefix+c.structDelim)
+}
+
+func (c *Builder) decode(target interface{}, prefix string) error {
 	structPtr := reflect.ValueOf(target)
 	if structPtr.Kind() != reflect.Ptr || structPtr.Elem().Kind() != reflect.Struct {
 		panic("config: To(target) must be a *struct")
 	}
-	c.populateStructRecursively(structPtr, "")
+	c.populateStructRecursively(structPtr, prefix)
 	if c.failedFields != nil {
 		return fmt.Errorf("config: the following fields had errors: %v", c.failedFields)
 	}

@@ -44,6 +44,19 @@ func Example() {
 	// [0.0.0.0 1.1.1.1 2.2.2.2] 3
 }
 
+func Example_subconfig() {
+	os.Clearenv()
+	os.Setenv("SUBCONFIG__IPWHITELIST", "0.0.0.0 1.1.1.1 2.2.2.2")
+
+	var c MySubConfig
+	config.FromEnv().Sub(&c, "SUBCONFIG")
+
+	fmt.Println(c.IPWhitelist, len(c.IPWhitelist))
+
+	// Output:
+	// [0.0.0.0 1.1.1.1 2.2.2.2] 3
+}
+
 func Example_defaults() {
 	os.Clearenv()
 	os.Setenv("DATABASE_URL", "production://")
