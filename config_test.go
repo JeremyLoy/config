@@ -511,3 +511,22 @@ func Test_getKey(t *testing.T) {
 		})
 	}
 }
+
+func Test_GenTest(t *testing.T) {
+	t.Setenv("EXAMPLE", "123")
+
+	type S struct {
+		Example int
+	}
+
+	var c S
+	var err error
+	c, err = GenTest[S]()
+
+	if err != nil {
+		t.Fatalf("Expected nil but got %v", err)
+	}
+	if c.Example != 123 {
+		t.Fatalf("Expected 123 but got %v", c.Example)
+	}
+}

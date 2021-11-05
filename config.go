@@ -42,6 +42,11 @@ const (
 	sliceDelim   = " "
 )
 
+func GenTest[T any]() (T, error) {
+	var t T
+	return t, FromEnv().To(&t)
+}
+
 // Builder contains the current configuration state.
 type Builder struct {
 	structDelim, sliceDelim string
