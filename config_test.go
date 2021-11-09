@@ -20,7 +20,7 @@ func Test_Integration(t *testing.T) {
 		A int    `config:"     "` // no-op/ignored
 		B string `config:"B"`     // no effect
 		C []int
-		D D `config:"dOg"` // case insensitive for sub-configs
+		D D `config:"dOg"` // case-insensitive for sub-configs
 		G []int
 		H uint8
 		I string
@@ -46,7 +46,7 @@ func Test_Integration(t *testing.T) {
 		"C=4 5 6",
 		"DoG__E=true",
 		"DoG__FErDINANd=true",
-		// should NOT log doc_j as it is not provided
+		// should NOT log dog_j as it is not provided
 		"G=1 y 2", // should log G[1] as it is an incorrect type, but still work with 0 and 2
 		"H=-84",   // should log H as it is an incorrect type
 		"I=",      // should NOT log I as there is no way to tell if it is missing or deliberately empty
@@ -134,7 +134,7 @@ func Test_shouldPanic(t *testing.T) {
 		},
 		{
 			name:      "int",
-			target:    &i,
+			target:    i,
 			wantPanic: true,
 		},
 		{
