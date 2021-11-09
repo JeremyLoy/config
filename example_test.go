@@ -3,7 +3,6 @@ package config_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -89,7 +88,7 @@ func Example_errorHandling() {
 }
 
 func Example_fromFileWithOverride() {
-	tempFile, _ := ioutil.TempFile("", "temp")
+	tempFile, _ := os.CreateTemp("", "temp")
 	tempFile.Write([]byte(strings.Join([]string{"PORT=1234", "FEATURE_FLAG=true"}, "\n")))
 	tempFile.Close()
 

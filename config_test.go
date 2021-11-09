@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -30,7 +29,7 @@ func Test_Integration(t *testing.T) {
 		M int8
 	}
 
-	file, err := ioutil.TempFile("", "testenv")
+	file, err := os.CreateTemp("", "testenv")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %v", err)
 	}

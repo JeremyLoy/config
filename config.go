@@ -28,7 +28,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
@@ -96,7 +95,7 @@ func From(file string) *Builder {
 
 // From merges new values from file into the current config state, returning the Builder.
 func (c *Builder) From(file string) *Builder {
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil {
 		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
 	}
@@ -138,6 +137,7 @@ func stringsToMap(ss []string) map[string]string {
 		if !strings.Contains(s, "=") {
 			continue // ensures return is always of length 2
 		}
+		// TODO replace with strings.Cut in go 1.18
 		split := strings.SplitN(s, "=", 2)
 		key, value := strings.ToLower(split[0]), split[1]
 		if key != "" && value != "" {
