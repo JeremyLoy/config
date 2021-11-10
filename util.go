@@ -1,109 +1,12 @@
-// Package config provides typesafe, cloud native configuration binding from environment variables or files to structs.
-//
-// Configuration can be done in as little as two lines:
-//     var c MyConfig
-//     config.FromEnv().To(&c)
-//
-// A field's type determines what https://golang.org/pkg/strconv/ function is called.
-//
-// All string conversion rules are as defined in the https://golang.org/pkg/strconv/ package.
-//
-// time.Duration follows the same parsing rules as https://golang.org/pkg/time#ParseDuration
-//
-// If chaining multiple data sources, data sets are merged.
-//
-// Later values override previous values.
-//   config.From("dev.config").FromEnv().To(&c)
-//
-// Unset values remain intact or as their native zero value: https://tour.golang.org/basics/12.
-//
-// Nested structs/subconfigs are delimited with double underscore.
-//   PARENT__CHILD
-//
-// Env vars map to struct fields case insensitively.
-// NOTE: Also true when using struct tags.
 package config
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"os"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
-
-const (
-	structTagKey = "config"
-	structDelim  = "__"
-	sliceDelim   = " "
-)
-
-// Builder contains the current configuration state.
-type Builder struct {
-	structDelim, sliceDelim string
-	configMap               map[string]string
-	failedFields            []string
-}
-
-func newBuilder() *Builder {
-	return &Builder{
-		configMap:   make(map[string]string),
-		structDelim: structDelim,
-		sliceDelim:  sliceDelim,
-	}
-}
-
-// To accepts a struct pointer, and populates it with the current config state.
-// Supported fields:
-//     * all int, uint, float variants
-//     * bool, struct, string
-//     * time.Duration
-//     * slice of any of the above, except for []struct{}
-// It returns an error if:
-//     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
-//     * there were errors doing file i/o
-// It panics if:
-//     * target is not a struct pointer
-func (c *Builder) To(target interface{}) error {
-	return c.decode(target, "")
-}
-
-// Sub behaves the same as To, however it maps configuration to the struct starting at the given prefix.
-func (c *Builder) Sub(target interface{}, prefix string) error {
-	return c.decode(target, prefix+c.structDelim)
-}
-
-func (c *Builder) decode(target interface{}, prefix string) error {
-	structPtr := reflect.ValueOf(target)
-	if structPtr.Kind() != reflect.Ptr || structPtr.Elem().Kind() != reflect.Struct {
-		panic("config: To(target) must be a *struct")
-	}
-	m := make(map[string]reflect.Value)
-	mapKeysToFields(structPtr, m, prefix)
-
-	for key, fieldPtr := range m {
-		stringValue := c.configMap[key]
-		switch fieldPtr.Elem().Type().Kind() {
-		case reflect.Slice:
-			for _, index := range convertAndSetSlice(fieldPtr, stringToSlice(stringValue, c.sliceDelim)) {
-				c.failedFields = append(c.failedFields, fmt.Sprintf("%v[%v]", key, index))
-			}
-		default:
-			if !convertAndSetValue(fieldPtr, stringValue) {
-				c.failedFields = append(c.failedFields, key)
-			}
-		}
-	}
-	sort.Strings(c.failedFields) // make output deterministic to aid in debugging
-	if c.failedFields != nil {
-		return fmt.Errorf("config: the following fields had errors: %v", c.failedFields)
-	}
-	return nil
-}
 
 func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix string) {
 	structValue := ptr.Elem()
@@ -122,43 +25,9 @@ func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix strin
 	}
 }
 
-// From returns a new Builder, populated with the values from file.
-func From(file string) *Builder {
-	return newBuilder().From(file)
-}
-
-// From merges new values from file into the current config state, returning the Builder.
-func (c *Builder) From(file string) *Builder {
-	content, err := os.ReadFile(file)
-	if err != nil {
-		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
-	}
-	scanner := bufio.NewScanner(bytes.NewReader(content))
-	var ss []string
-	for scanner.Scan() {
-		ss = append(ss, scanner.Text())
-	}
-	if scanner.Err() != nil {
-		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
-	}
-	c.mergeConfig(stringsToMap(ss))
-	return c
-}
-
-// FromEnv returns a new Builder, populated with environment variables
-func FromEnv() *Builder {
-	return newBuilder().FromEnv()
-}
-
-// FromEnv merges new values from the environment into the current config state, returning the Builder.
-func (c *Builder) FromEnv() *Builder {
-	c.mergeConfig(stringsToMap(os.Environ()))
-	return c
-}
-
-func (c *Builder) mergeConfig(in map[string]string) {
-	for k, v := range in {
-		c.configMap[k] = v
+func mergeMaps(first, second map[string]string) {
+	for k, v := range second {
+		first[k] = v
 	}
 }
 
@@ -246,9 +115,6 @@ func convertAndSetSlice(slicePtr reflect.Value, values []string) []int {
 // False is used to prevent accidental logging of secrets as
 // as the strconv include s in their error message.
 func convertAndSetValue(settable reflect.Value, s string) bool {
-	if s == "" {
-		return true
-	}
 	settableValue := settable.Elem()
 	var (
 		err error
