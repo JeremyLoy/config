@@ -90,7 +90,7 @@ func Test_Api(t *testing.T) {
 	}
 	wantError := "config: the following fields had errors: [file[nonexistfile] g[1] h m]"
 
-	builder := config.From(file.Name()).From("nonexistfile").FromEnv()
+	builder := config.From(file.Name()).From("nonexistfile").FromOptional("non existent and I shouldn't be listed in err").FromEnv()
 	gotErr := builder.To(&got)
 	_ = builder.Sub(&sub, "dog")
 	if !reflect.DeepEqual(got, want) {

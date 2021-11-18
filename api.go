@@ -45,10 +45,24 @@ func From(file string) *Builder {
 	return newBuilder().From(file)
 }
 
+// FromOptional returns a new Builder, populated with the values from file if it exists.
+func FromOptional(file string) *Builder {
+	return newBuilder().FromOptional(file)
+}
+
 // From merges new values from file into the current config state, returning the Builder.
 func (c *Builder) From(file string) *Builder {
+	return c.appendFile(file, true)
+}
+
+// FromOptional merges new values from file (if it exists) into the current config state, returning the Builder.
+func (c *Builder) FromOptional(file string) *Builder {
+	return c.appendFile(file, false)
+}
+
+func (c *Builder) appendFile(file string, includeErr bool) *Builder {
 	content, err := os.ReadFile(file)
-	if err != nil {
+	if includeErr && err != nil {
 		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(content))
@@ -56,7 +70,7 @@ func (c *Builder) From(file string) *Builder {
 	for scanner.Scan() {
 		ss = append(ss, scanner.Text())
 	}
-	if scanner.Err() != nil {
+	if includeErr && scanner.Err() != nil {
 		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
 	}
 	mergeMaps(c.configMap, stringsToMap(ss))
