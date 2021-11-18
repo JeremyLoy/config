@@ -26,9 +26,11 @@ err := config.FromEnv().To(&c)
 
 It's just simple, pure stdlib. 
 
-* A field's type determines what [strconv](https://golang.org/pkg/strconv/) function is called.
-* All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
-* time.Duration follows the same parsing rules as [time.ParseDuration](https://golang.org/pkg/time#ParseDuration)
+* A field's type determines what [strconv](https://pkg.go.dev/strconv) function is called.
+* All string conversion rules are as defined in the [strconv](https://pkg.go.dev/strconv) package
+* `time.Duration` follows the same parsing rules as [time.ParseDuration](https://pkg.go.dev/time#ParseDuration)
+* `*net.URL` follows the same parsing rules as [url.Parse](https://pkg.go.dev/net/url#URL.Parse)
+  * NOTE: `*net.URL` fields on the struct **must** be a pointer
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
   ```go
@@ -70,3 +72,4 @@ Feel free to use it on its own, or alongside other libraries.
 * No maps. The only feature of maps not handled by structs for this usecase is dynamic keys.
 
 * No pointer members. If you really need one, just take the address of parts of your struct.
+  * One exception is `*url.URL`, which is explicitly a pointer for ease of use, matching the `url` package conventions

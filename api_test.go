@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -29,6 +30,12 @@ func Test_Api(t *testing.T) {
 		K string
 		L time.Duration
 		M int8
+		U *url.URL
+	}
+	wantUrl := "https://google.com/search?q=golang"
+	wantUrlParsed, err := url.Parse(wantUrl)
+	if err != nil {
+		t.Fatalf("could not parse wanted URL: %v", err)
 	}
 
 	file, err := os.CreateTemp("", "testenv")
@@ -54,6 +61,7 @@ func Test_Api(t *testing.T) {
 		"I=",      // should NOT log I as there is no way to tell if it is missing or deliberately empty
 		"L=8h",
 		"M=128", // should fail as it is out of bounds for an int8
+		"U=" + wantUrl,
 	}, "\n")
 	_, err = file.Write([]byte(testData))
 	if err != nil {
@@ -87,6 +95,7 @@ func Test_Api(t *testing.T) {
 		K: "hardcoded",
 		L: eightHours,
 		M: 0,
+		U: wantUrlParsed,
 	}
 	wantError := "config: the following fields had errors: [file[nonexistfile] g[1] h m]"
 

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -122,8 +123,14 @@ func convertAndSetValue(settable reflect.Value, s string) bool {
 		u   uint64
 		b   bool
 		f   float64
+		url *url.URL
 	)
 	switch settableValue.Kind() {
+	case reflect.Ptr: // only one pointer type is handled at the moment, *url.URL
+		url, err = url.Parse(s)
+		if err == nil {
+			settableValue.Set(reflect.ValueOf(url))
+		}
 	case reflect.String:
 		settableValue.SetString(s)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

@@ -25,6 +25,7 @@ type Builder struct {
 //     * all int, uint, float variants
 //     * bool, struct, string
 //     * time.Duration
+//     * \*url.URL
 //     * slice of any of the above, except for []struct{}
 // It returns an error if:
 //     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
