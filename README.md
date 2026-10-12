@@ -29,8 +29,8 @@ It's just simple, pure stdlib.
 * A field's type determines what [strconv](https://pkg.go.dev/strconv) function is called.
 * All string conversion rules are as defined in the [strconv](https://pkg.go.dev/strconv) package
 * `time.Duration` follows the same parsing rules as [time.ParseDuration](https://pkg.go.dev/time#ParseDuration)
-* `*net.URL` follows the same parsing rules as [url.Parse](https://pkg.go.dev/net/url#URL.Parse)
-  * NOTE: `*net.URL` fields on the struct **must** be a pointer
+* `*url.URL` follows the same parsing rules as [url.Parse](https://pkg.go.dev/net/url#URL.Parse)
+  * NOTE: `*url.URL` fields on the struct **must** be a pointer
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
   ```go
@@ -56,7 +56,6 @@ It's just simple, pure stdlib.
     * Merge local files and environment variables for effortless local development.
 * small:
     * only stdlib 
-    * < 180 LoC
     
 ## Design Philosophy
 
