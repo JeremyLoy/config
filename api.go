@@ -52,17 +52,17 @@ func (c *Builder) Sub(target any, prefix string) error {
 	return c.decode(mustStructPtr(target), prefix+structDelim)
 }
 
-// Load returns a new T populated with the current config state of b.
+// Load returns a new T populated with the current config state.
 // It behaves the same as To, except that it returns ErrInvalidTarget
 // instead of panicking if T is not a struct type.
 //
-//	cfg, err := config.Load[MyConfig](config.From("dev.config").FromEnv())
-func Load[T any](b *Builder) (T, error) {
+//	cfg, err := config.From("dev.config").FromEnv().Load[MyConfig]()
+func (c *Builder) Load[T any]() (T, error) {
 	var target T
 	if reflect.TypeFor[T]().Kind() != reflect.Struct {
 		return target, ErrInvalidTarget
 	}
-	err := b.decode(reflect.ValueOf(&target), "")
+	err := c.decode(reflect.ValueOf(&target), "")
 	return target, err
 }
 

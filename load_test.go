@@ -10,7 +10,7 @@ import (
 
 func Test_Load(t *testing.T) {
 	t.Parallel()
-	got, err := config.Load[sourcesConfig](config.FromMap(map[string]string{"HOST": "h", "PORT": "1"}))
+	got, err := config.FromMap(map[string]string{"HOST": "h", "PORT": "1"}).Load[sourcesConfig]()
 	if err != nil {
 		t.Fatalf("unexpected error %v", err)
 	}
@@ -18,7 +18,7 @@ func Test_Load(t *testing.T) {
 		t.Errorf("got %+v, want {Host:h Port:1}", got)
 	}
 
-	got, err = config.Load[sourcesConfig](config.FromMap(map[string]string{"HOST": "h", "PORT": "x"}))
+	got, err = config.FromMap(map[string]string{"HOST": "h", "PORT": "x"}).Load[sourcesConfig]()
 	if err == nil || err.Error() != "config: the following fields had errors: [port]" {
 		t.Errorf("got err %v, want error for port", err)
 	}
@@ -30,23 +30,23 @@ func Test_Load(t *testing.T) {
 func Test_LoadInvalidTarget(t *testing.T) {
 	t.Parallel()
 	b := config.FromMap(nil)
-	if _, err := config.Load[int](b); !errors.Is(err, config.ErrInvalidTarget) {
+	if _, err := b.Load[int](); !errors.Is(err, config.ErrInvalidTarget) {
 		t.Errorf("Load[int]: got err %v, want ErrInvalidTarget", err)
 	}
-	if _, err := config.Load[*sourcesConfig](b); !errors.Is(err, config.ErrInvalidTarget) {
+	if _, err := b.Load[*sourcesConfig](); !errors.Is(err, config.ErrInvalidTarget) {
 		t.Errorf("Load[*struct]: got err %v, want ErrInvalidTarget", err)
 	}
 }
 
-func ExampleLoad() {
+func ExampleBuilder_Load() {
 	type Config struct {
 		Port     int
 		LogLevel string `config:"LOG_LEVEL"`
 	}
-	c, err := config.Load[Config](config.FromMap(map[string]string{
+	c, err := config.FromMap(map[string]string{
 		"PORT":      "8080",
 		"LOG_LEVEL": "debug",
-	}))
+	}).Load[Config]()
 
 	fmt.Println(c.Port, c.LogLevel, err)
 

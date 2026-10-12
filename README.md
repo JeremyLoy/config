@@ -22,7 +22,7 @@ var c MyConfig
 err := config.FromEnv().To(&c)
 
 // or, without declaring the variable first:
-c, err := config.Load[MyConfig](config.FromEnv())
+c, err := config.FromEnv().Load[MyConfig]()
 ```
 
 ## How It Works
