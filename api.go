@@ -5,9 +5,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"os"
+	"strings"
 )
 
 const (
@@ -18,9 +20,8 @@ const (
 
 // Builder contains the current configuration state.
 type Builder struct {
-	structDelim, sliceDelim string
-	configMap               map[string]string
-	sourceErrs              []*FieldError
+	configMap  map[string]string
+	sourceErrs []*FieldError
 }
 
 // To accepts a struct pointer, and populates it with the current config state.
@@ -47,7 +48,7 @@ func (c *Builder) To(target any) error {
 
 // Sub behaves the same as To, however it maps configuration to the struct starting at the given prefix.
 func (c *Builder) Sub(target any, prefix string) error {
-	return c.decode(target, prefix+c.structDelim)
+	return c.decode(target, prefix+structDelim)
 }
 
 // From returns a new Builder, populated with the values from file.
@@ -62,28 +63,79 @@ func FromOptional(file string) *Builder {
 
 // From merges new values from file into the current config state, returning the Builder.
 func (c *Builder) From(file string) *Builder {
-	return c.appendFile(file, false)
+	return c.appendFile(os.ReadFile, file, false)
 }
 
 // FromOptional merges new values from file (if it exists) into the current config state, returning the Builder.
 func (c *Builder) FromOptional(file string) *Builder {
-	return c.appendFile(file, true)
+	return c.appendFile(os.ReadFile, file, true)
 }
 
-// appendFile merges the contents of file into the config state.
-// If optional is true, a file that does not exist is not an error; any other failure still is.
-func (c *Builder) appendFile(file string, optional bool) *Builder {
-	content, err := os.ReadFile(file)
-	if err != nil && !(optional && errors.Is(err, fs.ErrNotExist)) {
-		c.sourceErrs = append(c.sourceErrs, &FieldError{Key: fmt.Sprintf("file[%v]", file), Err: err})
+// FromFS returns a new Builder, populated with the values from the named file in fsys.
+func FromFS(fsys fs.FS, name string) *Builder {
+	return newBuilder().FromFS(fsys, name)
+}
+
+// FromFS merges new values from the named file in fsys into the current config state, returning the Builder.
+func (c *Builder) FromFS(fsys fs.FS, name string) *Builder {
+	return c.appendFile(func(name string) ([]byte, error) { return fs.ReadFile(fsys, name) }, name, false)
+}
+
+// FromReader returns a new Builder, populated with the values read from r.
+func FromReader(r io.Reader) *Builder {
+	return newBuilder().FromReader(r)
+}
+
+// FromReader merges new values read from r into the current config state, returning the Builder.
+// r uses the same KEY=VALUE format as a file.
+func (c *Builder) FromReader(r io.Reader) *Builder {
+	return c.appendReader(r, "reader")
+}
+
+// FromMap returns a new Builder, populated with the values in m.
+func FromMap(m map[string]string) *Builder {
+	return newBuilder().FromMap(m)
+}
+
+// FromMap merges the values in m into the current config state, returning the Builder.
+// Keys are matched case insensitively, and empty values are ignored, as with every other source.
+func (c *Builder) FromMap(m map[string]string) *Builder {
+	for k, v := range m {
+		if k != "" && v != "" {
+			c.configMap[strings.ToLower(k)] = v
+		}
 	}
-	scanner := bufio.NewScanner(bytes.NewReader(content))
+	return c
+}
+
+// appendFile merges the contents of file, as returned by readFile, into the config state.
+// If optional is true, a file that does not exist is not an error; any other failure still is.
+func (c *Builder) appendFile(readFile func(string) ([]byte, error), file string, optional bool) *Builder {
+	key := fmt.Sprintf("file[%v]", file)
+	content, err := readFile(file)
+	if err != nil {
+		if !(optional && errors.Is(err, fs.ErrNotExist)) {
+			c.sourceErrs = append(c.sourceErrs, &FieldError{Key: key, Err: err})
+		}
+		return c
+	}
+	return c.appendReader(bytes.NewReader(content), key)
+}
+
+// appendReader merges KEY=VALUE lines read from r into the config state.
+// Lines starting with # are comments and are ignored. key identifies r in errors.
+func (c *Builder) appendReader(r io.Reader, key string) *Builder {
+	scanner := bufio.NewScanner(r)
 	var ss []string
 	for scanner.Scan() {
-		ss = append(ss, scanner.Text())
+		line := scanner.Text()
+		if strings.HasPrefix(strings.TrimSpace(line), "#") {
+			continue
+		}
+		ss = append(ss, line)
 	}
 	if err := scanner.Err(); err != nil {
-		c.sourceErrs = append(c.sourceErrs, &FieldError{Key: fmt.Sprintf("file[%v]", file), Err: err})
+		c.sourceErrs = append(c.sourceErrs, &FieldError{Key: key, Err: err})
 	}
 	maps.Copy(c.configMap, stringsToMap(ss))
 	return c
@@ -101,9 +153,5 @@ func (c *Builder) FromEnv() *Builder {
 }
 
 func newBuilder() *Builder {
-	return &Builder{
-		configMap:   make(map[string]string),
-		structDelim: structDelim,
-		sliceDelim:  sliceDelim,
-	}
+	return &Builder{configMap: make(map[string]string)}
 }
