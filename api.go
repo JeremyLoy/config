@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 )
 
@@ -38,12 +39,12 @@ type Builder struct {
 //
 // It panics if:
 //   - target is not a struct pointer
-func (c *Builder) To(target interface{}) error {
+func (c *Builder) To(target any) error {
 	return c.decode(target, "")
 }
 
 // Sub behaves the same as To, however it maps configuration to the struct starting at the given prefix.
-func (c *Builder) Sub(target interface{}, prefix string) error {
+func (c *Builder) Sub(target any, prefix string) error {
 	return c.decode(target, prefix+c.structDelim)
 }
 
@@ -82,7 +83,7 @@ func (c *Builder) appendFile(file string, optional bool) *Builder {
 	if scanner.Err() != nil {
 		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
 	}
-	mergeMaps(c.configMap, stringsToMap(ss))
+	maps.Copy(c.configMap, stringsToMap(ss))
 	return c
 }
 
@@ -93,7 +94,7 @@ func FromEnv() *Builder {
 
 // FromEnv merges new values from the environment into the current config state, returning the Builder.
 func (c *Builder) FromEnv() *Builder {
-	mergeMaps(c.configMap, stringsToMap(os.Environ()))
+	maps.Copy(c.configMap, stringsToMap(os.Environ()))
 	return c
 }
 

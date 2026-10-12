@@ -2,7 +2,6 @@ package config_test
 
 import (
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,7 +12,6 @@ import (
 
 func Test_Api(t *testing.T) {
 	// cannot be Parallelized as it manipulates env vars.
-	// It must clear env afterwards to avoid bleeding env changes.
 	type D struct {
 		E bool
 		F bool `config:"feRdiNaND"` // case insensitive
@@ -38,12 +36,6 @@ func Test_Api(t *testing.T) {
 		t.Fatalf("could not parse wanted URL: %v", err)
 	}
 
-	file, err := os.CreateTemp("", "testenv")
-	if err != nil {
-		t.Fatalf("failed to create temporary file: %v", err)
-	}
-	defer os.Remove(file.Name())
-
 	eightHours, err := time.ParseDuration("8h")
 	if err != nil {
 		panic(err)
@@ -63,18 +55,9 @@ func Test_Api(t *testing.T) {
 		"M=128", // should fail as it is out of bounds for an int8
 		"U=" + wantUrl,
 	}, "\n")
-	_, err = file.Write([]byte(testData))
-	if err != nil {
-		t.Fatalf("failed to write test data to temp file: %v", err)
-	}
-	err = os.Setenv("B", "overridden")
-	if err != nil {
-		t.Fatalf("failed to set environ: %v", err)
-	}
-	err = os.Setenv("C", "") // this should NOT override as it is empty
-	if err != nil {
-		t.Fatalf("failed to set environ: %v", err)
-	}
+	fileName := writeConfigFile(t, testData)
+	t.Setenv("B", "overridden")
+	t.Setenv("C", "") // this should NOT override as it is empty
 
 	got := testConfig{
 		K: "hardcoded",
@@ -99,7 +82,7 @@ func Test_Api(t *testing.T) {
 	}
 	wantError := "config: the following fields had errors: [file[nonexistfile] g[1] h m]"
 
-	builder := config.From(file.Name()).From("nonexistfile").FromOptional("non existent and I shouldn't be listed in err").FromEnv()
+	builder := config.From(fileName).From("nonexistfile").FromOptional("non existent and I shouldn't be listed in err").FromEnv()
 	gotErr := builder.To(&got)
 	_ = builder.Sub(&sub, "dog")
 	if !reflect.DeepEqual(got, want) {
@@ -114,7 +97,6 @@ func Test_Api(t *testing.T) {
 	if !reflect.DeepEqual(gotErr.Error(), wantError) {
 		t.Errorf("Integration: gotFailedFields %+v, wantFailedFields %+v", gotErr, wantError)
 	}
-	os.Clearenv()
 }
 
 func Test_shouldPanic(t *testing.T) {
@@ -125,7 +107,7 @@ func Test_shouldPanic(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		target    interface{}
+		target    any
 		wantPanic bool
 	}{
 		{
@@ -155,7 +137,6 @@ func Test_shouldPanic(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			defer func() {

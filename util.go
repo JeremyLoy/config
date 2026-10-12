@@ -9,17 +9,18 @@ import (
 	"time"
 )
 
-// urlPtrType is the only pointer type supported as a field.
-var urlPtrType = reflect.TypeOf((*url.URL)(nil))
+var (
+	// urlPtrType is the only pointer type supported as a field.
+	urlPtrType   = reflect.TypeFor[*url.URL]()
+	durationType = reflect.TypeFor[time.Duration]()
+)
 
 func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix string) {
-	structValue := ptr.Elem()
-	for i := 0; i < structValue.NumField(); i++ {
-		fieldType := structValue.Type().Field(i)
-		if fieldType.PkgPath != "" {
+	for fieldType, fieldValue := range ptr.Elem().Fields() {
+		if !fieldType.IsExported() {
 			continue // unexported fields cannot be set
 		}
-		fieldPtr := structValue.Field(i).Addr()
+		fieldPtr := fieldValue.Addr()
 
 		key := getKey(fieldType, prefix)
 
@@ -32,26 +33,15 @@ func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix strin
 	}
 }
 
-func mergeMaps(first, second map[string]string) {
-	for k, v := range second {
-		first[k] = v
-	}
-}
-
 // stringsToMap builds a map from a string slice.
 // The input strings are assumed to be environment variable in style e.g. KEY=VALUE
 // Keys with no value are not added to the map.
 func stringsToMap(ss []string) map[string]string {
 	m := make(map[string]string)
 	for _, s := range ss {
-		if !strings.Contains(s, "=") {
-			continue // ensures return is always of length 2
-		}
-		// TODO replace with strings.Cut in go 1.18
-		split := strings.SplitN(s, "=", 2)
-		key, value := strings.ToLower(split[0]), split[1]
-		if key != "" && value != "" {
-			m[key] = value
+		key, value, ok := strings.Cut(s, "=")
+		if ok && key != "" && value != "" {
+			m[strings.ToLower(key)] = value
 		}
 	}
 	return m
@@ -138,7 +128,7 @@ func convertAndSetValue(settable reflect.Value, s string) bool {
 		p   *url.URL
 	)
 	switch settableValue.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if settableValue.Type() != urlPtrType {
 			err = fmt.Errorf("config: cannot handle pointer type %v", settableValue.Type())
 			break
@@ -150,7 +140,7 @@ func convertAndSetValue(settable reflect.Value, s string) bool {
 	case reflect.String:
 		settableValue.SetString(s)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if settableValue.Type().PkgPath() == "time" && settableValue.Type().Name() == "Duration" {
+		if settableValue.Type() == durationType {
 			var d time.Duration
 			d, err = time.ParseDuration(s)
 			i = int64(d)
