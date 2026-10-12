@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"maps"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -43,12 +44,26 @@ type Builder struct {
 // It panics if:
 //   - target is not a struct pointer
 func (c *Builder) To(target any) error {
-	return c.decode(target, "")
+	return c.decode(mustStructPtr(target), "")
 }
 
 // Sub behaves the same as To, however it maps configuration to the struct starting at the given prefix.
 func (c *Builder) Sub(target any, prefix string) error {
-	return c.decode(target, prefix+structDelim)
+	return c.decode(mustStructPtr(target), prefix+structDelim)
+}
+
+// Load returns a new T populated with the current config state.
+// It behaves the same as To, except that it returns ErrInvalidTarget
+// instead of panicking if T is not a struct type.
+//
+//	cfg, err := config.From("dev.config").FromEnv().Load[MyConfig]()
+func (c *Builder) Load[T any]() (T, error) {
+	var target T
+	if reflect.TypeFor[T]().Kind() != reflect.Struct {
+		return target, ErrInvalidTarget
+	}
+	err := c.decode(reflect.ValueOf(&target), "")
+	return target, err
 }
 
 // From returns a new Builder, populated with the values from file.
