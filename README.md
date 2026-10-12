@@ -39,6 +39,9 @@ It's just simple, pure stdlib.
   config.From("dev.config").FromEnv().To(&c)
   ```
     
+* Sources: `FromEnv`, `From`/`FromOptional` (files), `FromFS` (any `fs.FS`, e.g. `embed.FS`), `FromReader` and `FromMap`
+    * files and readers use `KEY=VALUE` lines; lines starting with `#` are comments
+    * `FromMap` makes tests easy without touching the process environment
 * Unset values remain intact or as their native [zero value](https://tour.golang.org/basics/12) 
 * Nested structs/subconfigs are delimited with double underscore 
     * e.g. `PARENT__CHILD`
