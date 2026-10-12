@@ -22,16 +22,18 @@ type Builder struct {
 
 // To accepts a struct pointer, and populates it with the current config state.
 // Supported fields:
-//     * all int, uint, float variants
-//     * bool, struct, string
-//     * time.Duration
-//     * \*url.URL
-//     * slice of any of the above, except for []struct{}
+//   - all int, uint, float variants
+//   - bool, struct, string
+//   - time.Duration
+//   - \*url.URL
+//   - slice of any of the above, except for []struct{}
+//
 // It returns an error if:
-//     * struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
-//     * there were errors doing file i/o
+//   - struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
+//   - there were errors doing file i/o
+//
 // It panics if:
-//     * target is not a struct pointer
+//   - target is not a struct pointer
 func (c *Builder) To(target interface{}) error {
 	return c.decode(target, "")
 }

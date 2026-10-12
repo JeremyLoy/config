@@ -4,33 +4,48 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+
+permissions:
+  contents: read
 
 jobs:
 
   ci:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: [ oldstable, stable ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.16
+          go-version: ${{ matrix.go-version }}
 
-      - name: install deps
+      # staticcheck v0.8.1 pins a golang.org/x/tools that cannot read Go 1.27.2's
+      # export data ("export data version 5 is greater than maximum supported version 4").
+      # Build it against the latest x/tools until a staticcheck release does so itself.
+      - name: install staticcheck
         run: |
-          go install golang.org/x/tools/cmd/goimports@latest
-          go install golang.org/x/lint/golint@latest
-          go install github.com/mattn/goveralls@latest
+          cd "$(mktemp -d)"
+          go mod init tools
+          go get honnef.co/go/tools/cmd/staticcheck@latest golang.org/x/tools@latest
+          go build -o "$(go env GOPATH)/bin/staticcheck" honnef.co/go/tools/cmd/staticcheck
 
       - name: static analysis
         run: |
-          golint -set_exit_status
-          go vet
-          test -z "$(goimports -l .)"
+          test -z "$(gofmt -l .)" || (gofmt -d . && exit 1)
+          go vet ./...
+          staticcheck ./...
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       - name: Test
-        run: goveralls -service=github
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        if: matrix.go-version == 'stable'
+        run: go run github.com/mattn/goveralls@latest -coverprofile=coverage.out -service=github
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
