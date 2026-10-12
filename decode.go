@@ -7,11 +7,17 @@ import (
 	"strings"
 )
 
-func (c *Builder) decode(target any, prefix string) error {
+// mustStructPtr returns target as a reflect.Value, panicking if it is not a non-nil *struct.
+func mustStructPtr(target any) reflect.Value {
 	structPtr := reflect.ValueOf(target)
 	if structPtr.Kind() != reflect.Pointer || structPtr.Elem().Kind() != reflect.Struct {
 		panic("config: To(target) must be a *struct")
 	}
+	return structPtr
+}
+
+// decode populates the struct pointed to by structPtr with values whose keys start with prefix.
+func (c *Builder) decode(structPtr reflect.Value, prefix string) error {
 	// Start from the Builder's source errors, but keep field errors local to
 	// this call so that repeated calls to To/Sub do not accumulate duplicates.
 	errs := slices.Clone(c.sourceErrs)

@@ -20,6 +20,9 @@ type MyConfig struct {
 
 var c MyConfig
 err := config.FromEnv().To(&c)
+
+// or, without declaring the variable first:
+c, err := config.Load[MyConfig](config.FromEnv())
 ```
 
 ## How It Works

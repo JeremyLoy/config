@@ -8,6 +8,8 @@ import (
 )
 
 var (
+	// ErrInvalidTarget is returned by Load when its type argument is not a struct type.
+	ErrInvalidTarget = errors.New("config: Load[T] requires a struct type")
 	// ErrUnsupportedType is the cause of a FieldError for a field whose type cannot be configured.
 	ErrUnsupportedType = errors.New("unsupported field type")
 	// ErrInvalidValue is the cause of a FieldError for a value that could not be parsed,
