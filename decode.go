@@ -3,12 +3,12 @@ package config
 import (
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 )
 
-func (c *Builder) decode(target interface{}, prefix string) error {
+func (c *Builder) decode(target any, prefix string) error {
 	structPtr := reflect.ValueOf(target)
-	if structPtr.Kind() != reflect.Ptr || structPtr.Elem().Kind() != reflect.Struct {
+	if structPtr.Kind() != reflect.Pointer || structPtr.Elem().Kind() != reflect.Struct {
 		panic("config: To(target) must be a *struct")
 	}
 	// Start from the Builder's source errors, but keep field errors local to
@@ -33,7 +33,7 @@ func (c *Builder) decode(target interface{}, prefix string) error {
 			}
 		}
 	}
-	sort.Strings(failedFields) // make output deterministic to aid in debugging
+	slices.Sort(failedFields) // make output deterministic to aid in debugging
 	if failedFields != nil {
 		return fmt.Errorf("config: the following fields had errors: %v", failedFields)
 	}

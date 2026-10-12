@@ -15,7 +15,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version: [ oldstable, stable ]
+        include:
+          # the minimum version declared in go.mod
+          - name: minimum
+            go-version-file: go.mod
+          - name: stable
+            go-version: stable
+    name: ci (${{ matrix.name }})
+    env:
+      GOTOOLCHAIN: local # test the installed Go, never an auto-downloaded one
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +31,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+          go-version-file: ${{ matrix.go-version-file }}
 
       # staticcheck v0.8.1 pins a golang.org/x/tools that cannot read Go 1.27.2's
       # export data ("export data version 5 is greater than maximum supported version 4").
@@ -45,7 +54,7 @@ jobs:
         run: go test -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage
-        if: matrix.go-version == 'stable'
+        if: matrix.name == 'stable'
         run: go run github.com/mattn/goveralls@latest -coverprofile=coverage.out -service=github
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}

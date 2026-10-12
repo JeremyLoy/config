@@ -81,7 +81,7 @@ func Test_repeatedDecodeDoesNotAccumulateErrors(t *testing.T) {
 	var c struct{ P int }
 	b := config.From(writeConfigFile(t, "P=x"))
 	want := "config: the following fields had errors: [p]"
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if err := b.To(&c); err == nil || err.Error() != want {
 			t.Errorf("call %d: got err %v, want %q", i, err, want)
 		}

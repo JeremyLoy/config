@@ -37,7 +37,6 @@ func Test_stringToSlice(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := stringToSlice(tt.args.in, tt.args.delim); !reflect.DeepEqual(got, tt.want) {
@@ -50,13 +49,13 @@ func Test_stringToSlice(t *testing.T) {
 func Test_convertAndSetValue(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		settable interface{}
+		settable any
 		s        string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
@@ -65,7 +64,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(int),
 				s:        "-2",
 			},
-			want: func() interface{} { v := -2; return &v }(),
+			want: new(-2),
 		},
 		{
 			name: "int8",
@@ -73,7 +72,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(int8),
 				s:        "-2",
 			},
-			want: func() interface{} { v := int8(-2); return &v }(),
+			want: new(int8(-2)),
 		},
 		{
 			name: "int16",
@@ -81,7 +80,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(int16),
 				s:        "-2",
 			},
-			want: func() interface{} { v := int16(-2); return &v }(),
+			want: new(int16(-2)),
 		},
 		{
 			name: "int32",
@@ -89,7 +88,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(int32),
 				s:        "-2",
 			},
-			want: func() interface{} { v := int32(-2); return &v }(),
+			want: new(int32(-2)),
 		},
 		{
 			name: "int64",
@@ -97,7 +96,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(int64),
 				s:        "-2",
 			},
-			want: func() interface{} { v := int64(-2); return &v }(),
+			want: new(int64(-2)),
 		},
 		{
 			name: "uint",
@@ -105,7 +104,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(uint),
 				s:        "2",
 			},
-			want: func() interface{} { v := uint(2); return &v }(),
+			want: new(uint(2)),
 		},
 		{
 			name: "uint8",
@@ -113,7 +112,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(uint8),
 				s:        "2",
 			},
-			want: func() interface{} { v := uint8(2); return &v }(),
+			want: new(uint8(2)),
 		},
 		{
 			name: "uint16",
@@ -121,7 +120,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(uint16),
 				s:        "2",
 			},
-			want: func() interface{} { v := uint16(2); return &v }(),
+			want: new(uint16(2)),
 		},
 		{
 			name: "uint32",
@@ -129,7 +128,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(uint32),
 				s:        "2",
 			},
-			want: func() interface{} { v := uint32(2); return &v }(),
+			want: new(uint32(2)),
 		},
 		{
 			name: "uint64",
@@ -137,7 +136,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(uint64),
 				s:        "2",
 			},
-			want: func() interface{} { v := uint64(2); return &v }(),
+			want: new(uint64(2)),
 		},
 		{
 			name: "float64",
@@ -145,7 +144,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(float64),
 				s:        "1.1",
 			},
-			want: func() interface{} { v := float64(1.1); return &v }(),
+			want: new(float64(1.1)),
 		},
 		{
 			name: "float32",
@@ -153,7 +152,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(float32),
 				s:        "1.1",
 			},
-			want: func() interface{} { v := float32(1.1); return &v }(),
+			want: new(float32(1.1)),
 		},
 		{
 			name: "bool",
@@ -161,7 +160,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(bool),
 				s:        "t",
 			},
-			want: func() interface{} { v := true; return &v }(),
+			want: new(true),
 		},
 		{
 			name: "string",
@@ -169,7 +168,7 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(string),
 				s:        "abc",
 			},
-			want: func() interface{} { v := "abc"; return &v }(),
+			want: new("abc"),
 		},
 		{
 			name: "bad convert",
@@ -177,12 +176,11 @@ func Test_convertAndSetValue(t *testing.T) {
 				settable: new(int),
 				s:        "abc",
 			},
-			want:    func() interface{} { v := 0; return &v }(),
+			want:    new(0),
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			ok := convertAndSetValue(reflect.ValueOf(tt.args.settable), tt.args.s)
@@ -199,13 +197,13 @@ func Test_convertAndSetValue(t *testing.T) {
 func Test_convertAndSetSlice(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		slicePtr interface{}
+		slicePtr any
 		values   []string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    any
 		wantErr []int
 	}{
 		{
@@ -214,7 +212,7 @@ func Test_convertAndSetSlice(t *testing.T) {
 				slicePtr: new([]string),
 				values:   []string{"a", "b", "c", "def"},
 			},
-			want: func() interface{} { v := []string{"a", "b", "c", "def"}; return &v }(),
+			want: new([]string{"a", "b", "c", "def"}),
 		},
 		{
 			name: "int slice",
@@ -222,7 +220,7 @@ func Test_convertAndSetSlice(t *testing.T) {
 				slicePtr: new([]int),
 				values:   []string{"1", "2", "3", "4"},
 			},
-			want: func() interface{} { v := []int{1, 2, 3, 4}; return &v }(),
+			want: new([]int{1, 2, 3, 4}),
 		},
 		{
 			name: "int slice - bad values",
@@ -230,12 +228,11 @@ func Test_convertAndSetSlice(t *testing.T) {
 				slicePtr: new([]int),
 				values:   []string{"1", "x", "3", "4"},
 			},
-			want:    func() interface{} { v := []int{1, 3, 4}; return &v }(),
+			want:    new([]int{1, 3, 4}),
 			wantErr: []int{1},
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			gotErr := convertAndSetSlice(reflect.ValueOf(tt.args.slicePtr), tt.args.values)
@@ -271,7 +268,6 @@ func Test_stringsToMap(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := stringsToMap(tt.args.ss); !reflect.DeepEqual(got, tt.want) {
@@ -349,7 +345,6 @@ func Test_getKey(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := getKey(tt.args.t, tt.args.prefix); got != tt.want {
