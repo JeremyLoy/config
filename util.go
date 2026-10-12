@@ -9,10 +9,16 @@ import (
 	"time"
 )
 
+// urlPtrType is the only pointer type supported as a field.
+var urlPtrType = reflect.TypeOf((*url.URL)(nil))
+
 func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix string) {
 	structValue := ptr.Elem()
 	for i := 0; i < structValue.NumField(); i++ {
 		fieldType := structValue.Type().Field(i)
+		if fieldType.PkgPath != "" {
+			continue // unexported fields cannot be set
+		}
 		fieldPtr := structValue.Field(i).Addr()
 
 		key := getKey(fieldType, prefix)
@@ -87,23 +93,29 @@ func stringToSlice(s, delim string) []string {
 }
 
 // convertAndSetSlice builds a slice of a dynamic type.
-// It converts each entry in "values" to the elemType of the passed in slice.
-// The slice remains nil if "values" is empty.
+// It converts each entry in "values" to the elemType of the passed in slice,
+// and replaces the slice's existing contents with the converted values.
+// The slice is left untouched if "values" is empty.
 // All values are attempted.
 // Returns the indices of failed values
 func convertAndSetSlice(slicePtr reflect.Value, values []string) []int {
+	if len(values) == 0 {
+		return nil
+	}
 	sliceVal := slicePtr.Elem()
 	elemType := sliceVal.Type().Elem()
 
+	newSlice := reflect.MakeSlice(sliceVal.Type(), 0, len(values))
 	var failedIndices []int
 	for i, s := range values {
 		valuePtr := reflect.New(elemType)
 		if !convertAndSetValue(valuePtr, s) {
 			failedIndices = append(failedIndices, i)
 		} else {
-			sliceVal.Set(reflect.Append(sliceVal, valuePtr.Elem()))
+			newSlice = reflect.Append(newSlice, valuePtr.Elem())
 		}
 	}
+	sliceVal.Set(newSlice)
 	return failedIndices
 }
 
@@ -123,13 +135,17 @@ func convertAndSetValue(settable reflect.Value, s string) bool {
 		u   uint64
 		b   bool
 		f   float64
-		url *url.URL
+		p   *url.URL
 	)
 	switch settableValue.Kind() {
-	case reflect.Ptr: // only one pointer type is handled at the moment, *url.URL
-		url, err = url.Parse(s)
+	case reflect.Ptr:
+		if settableValue.Type() != urlPtrType {
+			err = fmt.Errorf("config: cannot handle pointer type %v", settableValue.Type())
+			break
+		}
+		p, err = url.Parse(s)
 		if err == nil {
-			settableValue.Set(reflect.ValueOf(url))
+			settableValue.Set(reflect.ValueOf(p))
 		}
 	case reflect.String:
 		settableValue.SetString(s)

@@ -3,7 +3,9 @@ package config
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 )
 
@@ -28,8 +30,10 @@ type Builder struct {
 //   - \*url.URL
 //   - slice of any of the above, except for []struct{}
 //
+// Unexported fields are ignored. Slices are replaced, not appended to.
+//
 // It returns an error if:
-//   - struct contains unsupported fields (pointers, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
+//   - struct contains unsupported fields (pointers other than *url.URL, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
 //   - there were errors doing file i/o
 //
 // It panics if:
@@ -55,17 +59,19 @@ func FromOptional(file string) *Builder {
 
 // From merges new values from file into the current config state, returning the Builder.
 func (c *Builder) From(file string) *Builder {
-	return c.appendFile(file, true)
+	return c.appendFile(file, false)
 }
 
 // FromOptional merges new values from file (if it exists) into the current config state, returning the Builder.
 func (c *Builder) FromOptional(file string) *Builder {
-	return c.appendFile(file, false)
+	return c.appendFile(file, true)
 }
 
-func (c *Builder) appendFile(file string, includeErr bool) *Builder {
+// appendFile merges the contents of file into the config state.
+// If optional is true, a file that does not exist is not an error; any other failure still is.
+func (c *Builder) appendFile(file string, optional bool) *Builder {
 	content, err := os.ReadFile(file)
-	if includeErr && err != nil {
+	if err != nil && !(optional && errors.Is(err, fs.ErrNotExist)) {
 		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(content))
@@ -73,7 +79,7 @@ func (c *Builder) appendFile(file string, includeErr bool) *Builder {
 	for scanner.Scan() {
 		ss = append(ss, scanner.Text())
 	}
-	if includeErr && scanner.Err() != nil {
+	if scanner.Err() != nil {
 		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
 	}
 	mergeMaps(c.configMap, stringsToMap(ss))

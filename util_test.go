@@ -185,12 +185,12 @@ func Test_convertAndSetValue(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotErr := convertAndSetValue(reflect.ValueOf(tt.args.settable), tt.args.s)
+			ok := convertAndSetValue(reflect.ValueOf(tt.args.settable), tt.args.s)
 			if !reflect.DeepEqual(tt.args.settable, tt.want) {
 				t.Errorf("convertAndSetValue = %v, want %v", tt.args.settable, tt.want)
 			}
-			if gotErr == tt.wantErr {
-				t.Errorf("convertAndSetValue err = %v, want %v", gotErr, tt.wantErr)
+			if ok == tt.wantErr {
+				t.Errorf("convertAndSetValue ok = %v, wantErr %v", ok, tt.wantErr)
 			}
 		})
 	}

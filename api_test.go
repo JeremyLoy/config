@@ -159,8 +159,8 @@ func Test_shouldPanic(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			defer func() {
-				if r := recover(); (r == nil) == tt.wantPanic {
-					t.Errorf("should have caused a panic")
+				if r := recover(); (r != nil) != tt.wantPanic {
+					t.Errorf("got panic %v, wantPanic %v", r, tt.wantPanic)
 				}
 			}()
 			_ = config.FromEnv().To(tt.target)

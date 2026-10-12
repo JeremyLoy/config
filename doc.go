@@ -11,8 +11,8 @@
 //
 // time.Duration follows the same parsing rules as https://pkg.go.dev/time#ParseDuration
 //
-// *net.URL follows the same parsing rules as https://pkg.go.dev/net/url#URL.Parse
-// NOTE: `*net.URL` fields on the struct **must** be a pointer
+// *url.URL follows the same parsing rules as https://pkg.go.dev/net/url#URL.Parse
+// NOTE: `*url.URL` fields on the struct **must** be a pointer
 //
 // If chaining multiple data sources, data sets are merged.
 //
