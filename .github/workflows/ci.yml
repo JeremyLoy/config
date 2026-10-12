@@ -24,11 +24,21 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      # staticcheck v0.8.1 pins a golang.org/x/tools that cannot read Go 1.27.2's
+      # export data ("export data version 5 is greater than maximum supported version 4").
+      # Build it against the latest x/tools until a staticcheck release does so itself.
+      - name: install staticcheck
+        run: |
+          cd "$(mktemp -d)"
+          go mod init tools
+          go get honnef.co/go/tools/cmd/staticcheck@latest golang.org/x/tools@latest
+          go build -o "$(go env GOPATH)/bin/staticcheck" honnef.co/go/tools/cmd/staticcheck
+
       - name: static analysis
         run: |
           test -z "$(gofmt -l .)" || (gofmt -d . && exit 1)
           go vet ./...
-          go run honnef.co/go/tools/cmd/staticcheck@latest ./...
+          staticcheck ./...
           go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       - name: Test
