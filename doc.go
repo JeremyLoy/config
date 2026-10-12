@@ -14,6 +14,8 @@
 // *url.URL follows the same parsing rules as https://pkg.go.dev/net/url#URL.Parse
 // NOTE: `*url.URL` fields on the struct **must** be a pointer
 //
+// Any type implementing [encoding.TextUnmarshaler] is parsed with its UnmarshalText method.
+//
 // If chaining multiple data sources, data sets are merged.
 //
 // Later values override previous values.

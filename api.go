@@ -29,6 +29,8 @@ type Builder struct {
 //   - bool, struct, string
 //   - time.Duration
 //   - \*url.URL
+//   - any type whose pointer implements [encoding.TextUnmarshaler],
+//     such as [time.Time], [net/netip.Addr], [net.IP] and [log/slog.Level]
 //   - slice of any of the above, except for []struct{}
 //
 // Unexported fields are ignored. Slices are replaced, not appended to.

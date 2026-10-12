@@ -31,6 +31,8 @@ It's just simple, pure stdlib.
 * `time.Duration` follows the same parsing rules as [time.ParseDuration](https://pkg.go.dev/time#ParseDuration)
 * `*url.URL` follows the same parsing rules as [url.Parse](https://pkg.go.dev/net/url#URL.Parse)
   * NOTE: `*url.URL` fields on the struct **must** be a pointer
+* Any type implementing [encoding.TextUnmarshaler](https://pkg.go.dev/encoding#TextUnmarshaler) is parsed with its `UnmarshalText` method,
+  e.g. `time.Time`, `netip.Addr`, `net.IP`, `slog.Level`, or your own types
 * If chaining multiple data sources, data sets are merged. 
   Later values override previous values.
   ```go

@@ -23,8 +23,8 @@ func (c *Builder) decode(target any, prefix string) error {
 		if !ok {
 			continue
 		}
-		switch fieldPtr.Elem().Type().Kind() {
-		case reflect.Slice:
+		switch fieldType := fieldPtr.Elem().Type(); {
+		case fieldType.Kind() == reflect.Slice && !isTextUnmarshaler(fieldType):
 			for index, err := range convertAndSetSlice(fieldPtr, stringToSlice(stringValue, c.sliceDelim)) {
 				errs = append(errs, &FieldError{Key: fmt.Sprintf("%v[%v]", key, index), Err: err})
 			}

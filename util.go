@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -12,7 +13,15 @@ var (
 	// urlPtrType is the only pointer type supported as a field.
 	urlPtrType   = reflect.TypeFor[*url.URL]()
 	durationType = reflect.TypeFor[time.Duration]()
+
+	textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
 )
+
+// isTextUnmarshaler reports whether a pointer to t implements encoding.TextUnmarshaler.
+// Such types are always set as a single value, even if their kind is struct or slice.
+func isTextUnmarshaler(t reflect.Type) bool {
+	return reflect.PointerTo(t).Implements(textUnmarshalerType)
+}
 
 func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix string) {
 	for fieldType, fieldValue := range ptr.Elem().Fields() {
@@ -23,8 +32,8 @@ func mapKeysToFields(ptr reflect.Value, m map[string]reflect.Value, prefix strin
 
 		key := getKey(fieldType, prefix)
 
-		switch fieldType.Type.Kind() {
-		case reflect.Struct:
+		switch {
+		case fieldType.Type.Kind() == reflect.Struct && !isTextUnmarshaler(fieldType.Type):
 			mapKeysToFields(fieldPtr, m, key+structDelim)
 		default:
 			m[key] = fieldPtr
@@ -112,7 +121,8 @@ func convertAndSetSlice(slicePtr reflect.Value, values []string) map[int]error {
 }
 
 // convertAndSetValue receives a settable of an arbitrary kind, and sets its value to s.
-// It calls the matching strconv function on s, based on the settable's kind.
+// If the settable implements encoding.TextUnmarshaler, its UnmarshalText method is used.
+// Otherwise it calls the matching strconv function on s, based on the settable's kind.
 // All basic types (bool, int, float, string) are handled by this function.
 // Slice and struct are handled elsewhere.
 //
@@ -120,6 +130,12 @@ func convertAndSetSlice(slicePtr reflect.Value, values []string) map[int]error {
 // A failed parse returns a sanitized error that does not contain s,
 // to prevent accidental logging of secrets.
 func convertAndSetValue(settable reflect.Value, s string) error {
+	if tu, ok := settable.Interface().(encoding.TextUnmarshaler); ok {
+		if err := tu.UnmarshalText([]byte(s)); err != nil {
+			return ErrInvalidValue // UnmarshalText errors may contain s
+		}
+		return nil
+	}
 	settableValue := settable.Elem()
 	var (
 		err error
