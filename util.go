@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -87,8 +86,8 @@ func stringToSlice(s, delim string) []string {
 // and replaces the slice's existing contents with the converted values.
 // The slice is left untouched if "values" is empty.
 // All values are attempted.
-// Returns the indices of failed values
-func convertAndSetSlice(slicePtr reflect.Value, values []string) []int {
+// Returns the errors of failed values, keyed by index.
+func convertAndSetSlice(slicePtr reflect.Value, values []string) map[int]error {
 	if len(values) == 0 {
 		return nil
 	}
@@ -96,28 +95,31 @@ func convertAndSetSlice(slicePtr reflect.Value, values []string) []int {
 	elemType := sliceVal.Type().Elem()
 
 	newSlice := reflect.MakeSlice(sliceVal.Type(), 0, len(values))
-	var failedIndices []int
+	var failed map[int]error
 	for i, s := range values {
 		valuePtr := reflect.New(elemType)
-		if !convertAndSetValue(valuePtr, s) {
-			failedIndices = append(failedIndices, i)
+		if err := convertAndSetValue(valuePtr, s); err != nil {
+			if failed == nil {
+				failed = make(map[int]error)
+			}
+			failed[i] = err
 		} else {
 			newSlice = reflect.Append(newSlice, valuePtr.Elem())
 		}
 	}
 	sliceVal.Set(newSlice)
-	return failedIndices
+	return failed
 }
 
-// convertAndSetValue receives a settable of an arbitrary kind, and sets its value to s, returning true.
+// convertAndSetValue receives a settable of an arbitrary kind, and sets its value to s.
 // It calls the matching strconv function on s, based on the settable's kind.
 // All basic types (bool, int, float, string) are handled by this function.
 // Slice and struct are handled elsewhere.
 //
-// An unhandled kind or a failed parse returns false.
-// False is used to prevent accidental logging of secrets as
-// as the strconv include s in their error message.
-func convertAndSetValue(settable reflect.Value, s string) bool {
+// An unhandled kind returns ErrUnsupportedType.
+// A failed parse returns a sanitized error that does not contain s,
+// to prevent accidental logging of secrets.
+func convertAndSetValue(settable reflect.Value, s string) error {
 	settableValue := settable.Elem()
 	var (
 		err error
@@ -130,8 +132,7 @@ func convertAndSetValue(settable reflect.Value, s string) bool {
 	switch settableValue.Kind() {
 	case reflect.Pointer:
 		if settableValue.Type() != urlPtrType {
-			err = fmt.Errorf("config: cannot handle pointer type %v", settableValue.Type())
-			break
+			return ErrUnsupportedType
 		}
 		p, err = url.Parse(s)
 		if err == nil {
@@ -166,7 +167,10 @@ func convertAndSetValue(settable reflect.Value, s string) bool {
 			settableValue.SetFloat(f)
 		}
 	default:
-		err = fmt.Errorf("config: cannot handle kind %v", settableValue.Type().Kind())
+		return ErrUnsupportedType
 	}
-	return err == nil
+	if err != nil {
+		return sanitize(err)
+	}
+	return nil
 }

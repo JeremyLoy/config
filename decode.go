@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 )
 
 func (c *Builder) decode(target any, prefix string) error {
@@ -13,7 +14,7 @@ func (c *Builder) decode(target any, prefix string) error {
 	}
 	// Start from the Builder's source errors, but keep field errors local to
 	// this call so that repeated calls to To/Sub do not accumulate duplicates.
-	failedFields := append([]string(nil), c.failedFields...)
+	errs := slices.Clone(c.sourceErrs)
 	m := make(map[string]reflect.Value)
 	mapKeysToFields(structPtr, m, prefix)
 
@@ -24,18 +25,19 @@ func (c *Builder) decode(target any, prefix string) error {
 		}
 		switch fieldPtr.Elem().Type().Kind() {
 		case reflect.Slice:
-			for _, index := range convertAndSetSlice(fieldPtr, stringToSlice(stringValue, c.sliceDelim)) {
-				failedFields = append(failedFields, fmt.Sprintf("%v[%v]", key, index))
+			for index, err := range convertAndSetSlice(fieldPtr, stringToSlice(stringValue, c.sliceDelim)) {
+				errs = append(errs, &FieldError{Key: fmt.Sprintf("%v[%v]", key, index), Err: err})
 			}
 		default:
-			if !convertAndSetValue(fieldPtr, stringValue) {
-				failedFields = append(failedFields, key)
+			if err := convertAndSetValue(fieldPtr, stringValue); err != nil {
+				errs = append(errs, &FieldError{Key: key, Err: err})
 			}
 		}
 	}
-	slices.Sort(failedFields) // make output deterministic to aid in debugging
-	if failedFields != nil {
-		return fmt.Errorf("config: the following fields had errors: %v", failedFields)
+	if errs != nil {
+		// make output deterministic to aid in debugging
+		slices.SortFunc(errs, func(a, b *FieldError) int { return strings.Compare(a.Key, b.Key) })
+		return &Error{Errors: errs}
 	}
 	return nil
 }

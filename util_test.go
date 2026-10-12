@@ -1,7 +1,9 @@
 package config
 
 import (
+	"maps"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -183,12 +185,12 @@ func Test_convertAndSetValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ok := convertAndSetValue(reflect.ValueOf(tt.args.settable), tt.args.s)
+			err := convertAndSetValue(reflect.ValueOf(tt.args.settable), tt.args.s)
 			if !reflect.DeepEqual(tt.args.settable, tt.want) {
 				t.Errorf("convertAndSetValue = %v, want %v", tt.args.settable, tt.want)
 			}
-			if ok == tt.wantErr {
-				t.Errorf("convertAndSetValue ok = %v, wantErr %v", ok, tt.wantErr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("convertAndSetValue err = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -235,7 +237,7 @@ func Test_convertAndSetSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			gotErr := convertAndSetSlice(reflect.ValueOf(tt.args.slicePtr), tt.args.values)
+			gotErr := slices.Sorted(maps.Keys(convertAndSetSlice(reflect.ValueOf(tt.args.slicePtr), tt.args.values)))
 			if !reflect.DeepEqual(tt.args.slicePtr, tt.want) {
 				t.Errorf("convertAndSetSlice = %v, want: %v", tt.args.slicePtr, tt.want)
 			}

@@ -42,7 +42,9 @@ It's just simple, pure stdlib.
     * e.g. `PARENT__CHILD`
 * Env vars map to struct fields case insensitively
     * NOTE: Also true when using struct tags.
-* Any errors encountered are aggregated into a single error value
+* Any errors encountered are aggregated into a single `*config.Error`
+    * inspect it with `errors.AsType[*config.Error](err)`, or test causes with `errors.Is` (e.g. `fs.ErrNotExist`, `strconv.ErrRange`)
+    * errors never contain configured values, so they are safe to log
     * the entirety of the struct is always attempted
     * failed conversions (i.e. converting "x" to an int) and file i/o are the only sources of errors
         * missing values are not errors

@@ -20,7 +20,7 @@ const (
 type Builder struct {
 	structDelim, sliceDelim string
 	configMap               map[string]string
-	failedFields            []string
+	sourceErrs              []*FieldError
 }
 
 // To accepts a struct pointer, and populates it with the current config state.
@@ -33,7 +33,7 @@ type Builder struct {
 //
 // Unexported fields are ignored. Slices are replaced, not appended to.
 //
-// It returns an error if:
+// It returns an *Error if:
 //   - struct contains unsupported fields (pointers other than *url.URL, maps, slice of structs, channels, arrays, funcs, interfaces, complex)
 //   - there were errors doing file i/o
 //
@@ -73,15 +73,15 @@ func (c *Builder) FromOptional(file string) *Builder {
 func (c *Builder) appendFile(file string, optional bool) *Builder {
 	content, err := os.ReadFile(file)
 	if err != nil && !(optional && errors.Is(err, fs.ErrNotExist)) {
-		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
+		c.sourceErrs = append(c.sourceErrs, &FieldError{Key: fmt.Sprintf("file[%v]", file), Err: err})
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 	var ss []string
 	for scanner.Scan() {
 		ss = append(ss, scanner.Text())
 	}
-	if scanner.Err() != nil {
-		c.failedFields = append(c.failedFields, fmt.Sprintf("file[%v]", file))
+	if err := scanner.Err(); err != nil {
+		c.sourceErrs = append(c.sourceErrs, &FieldError{Key: fmt.Sprintf("file[%v]", file), Err: err})
 	}
 	maps.Copy(c.configMap, stringsToMap(ss))
 	return c
